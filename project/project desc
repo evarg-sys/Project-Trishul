@@ -3,3 +3,4 @@ disaster response planning project:
 - it will do this automatically and use AI to allocate resources and we will use react frontend and django backend. 
 - the way the ML model works is based on three factors which will be calculated. The first is the how bad of the disaster it is, 
 the second being how fare it is from the station, the third being the feasbility for other services.
+- the project is nice
