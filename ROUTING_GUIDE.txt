@@ -1,0 +1,88 @@
+# disaster routing thing
+
+quick guide for the osm routing function
+
+## setup
+
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+thats it
+
+## how to run
+
+```bash
+python fire_station_constraints.py
+```
+
+wait like 2 mins, it downloads chicago roads and stuff. makes a map file called `fire_station_dispatch.html`
+
+## what each function does
+
+### disaster_routing.py
+
+**load_network()** - downloads chicago roads from osm. takes 30 sec first time
+
+**geocode_address(address)** - turns "123 main st" into lat/lon coords
+
+**mark_disaster_area(coords, radius_meters=250)** - blocks roads in a circle around disaster
+
+**find_shortest_route(start, end)** - finds path from A to B avoiding blocked roads. returns distance and route
+
+**visualize_route()** - makes the html map showing all routes
+
+### fire_station_constraints.py
+
+**find_closest_available_fire_station()** - checks all fire stations, picks closest one that:
+- has enough trucks
+- is operational  
+- has a route thats not blocked
+
+main script does:
+1. loads chicago roads
+2. calculates normal routes
+3. blocks disaster area (250m)
+4. finds routes that go around it
+5. picks best station
+6. shows how much time was lost rerouting
+7. makes map with all options
+
+## change stuff
+
+**different disaster spot** - line 82, change the address
+
+**add fire stations** - add more to the list around line 65
+
+**bigger/smaller blocked area** - line 99, change `radius_meters=250`
+
+**different constraints** - lines 104-108, change min trucks, max distance etc
+
+## output
+
+map shows:
+- blue line = route we're using
+- orange dashed = other options we didnt pick
+- red circle = blocked disaster zone
+- green pin = fire station we picked
+- orange pins = other stations
+
+console shows distance, time, why we picked that station
+
+## troubleshooting
+
+**"no route found"** - disaster radius too big, make it smaller
+
+**"geocoder unavailable"** - wait 1 min, api rate limit
+
+**slow** - first run always slow, downloads whole city. second run fast
+
+## files
+
+- `disaster_routing.py` - main routing code
+- `fire_station_constraints.py` - example with fire stations
+- `requirements.txt` - packages needed
+- output: `fire_station_dispatch.html` - open in browser
+
+thats pretty much it
