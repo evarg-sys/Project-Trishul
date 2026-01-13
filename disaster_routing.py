@@ -16,6 +16,21 @@ class DisasterRouting:
         self.graph = ox.graph_from_place(self.city, network_type=network_type)
         print(f"Loaded {len(self.graph.nodes)} nodes, {len(self.graph.edges)} edges")
 
+    def geocode_address(self, address):
+        if address in self.geocode_cache:
+            return self.geocode_cache[address]
+
+        time.sleep(1)
+        try:
+            location = self.geolocator.geocode(f"{address}, {self.city}")
+            if location:
+                coords = (location.latitude, location.longitude)
+                self.geocode_cache[address] = coords
+                return coords
+        except Exception as e:
+            print("Geocoding error:", e)
+        return None
+
     def get_nearest_node(self, coords):
         return ox.nearest_nodes(self.graph, coords[1], coords[0])
 
@@ -100,14 +115,12 @@ class DisasterRouting:
     def visualize_route(self, disaster_coords, fire_routes=None, ambulance_routes=None, save_path="dispatch_map.html"):
         m = folium.Map(location=disaster_coords, zoom_start=13)
 
-        # Disaster
         folium.Circle(
             location=disaster_coords, radius=300,
             color="red", fill=True, fillOpacity=0.4,
             popup="DISASTER LOCATION"
         ).add_to(m)
 
-        # Fire routes
         if fire_routes:
             for r in fire_routes:
                 coords = [(self.graph.nodes[n]['y'], self.graph.nodes[n]['x']) for n in r["route_nodes"]]
@@ -124,7 +137,6 @@ class DisasterRouting:
                     icon=folium.Icon(color="red", icon="fire")
                 ).add_to(m)
 
-        # Ambulance routes
         if ambulance_routes:
             for r in ambulance_routes:
                 coords = [(self.graph.nodes[n]['y'], self.graph.nodes[n]['x']) for n in r["route_nodes"]]
@@ -146,7 +158,6 @@ class DisasterRouting:
         return m
 
 
-# --------- QUICK RUN TEST ----------
 if __name__ == "__main__":
     router = DisasterRouting("Chicago, Illinois, USA")
     router.load_network()
