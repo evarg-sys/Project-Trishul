@@ -1,0 +1,29 @@
+* {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  font-size: 36px;
+  margin-bottom: 30px;
+}
+
+.button-column {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.button-column button {
+  width: 220px;
+  padding: 12px;
+  font-size: 18px;
+  cursor: pointer;
+}
