@@ -1,29 +1,122 @@
 * {
   font-family: "Times New Roman", Times, serif;
+  box-sizing: border-box;
 }
 
-.container {
-  min-height: 100vh;
+body {
+  margin: 0;
+  background: black;
+  color: white;
+}
+
+.app-root {
+  display: flex;
+  height: 100vh;
+  gap: 20px;
+  padding: 20px;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* MAP */
+.map-panel {
+  flex: 2;
+  height: 100%;
+}
+
+/* RIGHT SIDE */
+.right-panel {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  gap: 20px;
 }
 
-.title {
-  font-size: 36px;
-  margin-bottom: 30px;
+/* MENU */
+.menu-panel {
+  padding: 20px;
 }
 
-.button-column {
+.menu-title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.menu-buttons {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 }
 
-.button-column button {
-  width: 220px;
-  padding: 12px;
+.menu-buttons button {
+  padding: 14px;
   font-size: 18px;
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 8px;
   cursor: pointer;
+}
+
+.menu-buttons button:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* INFO PANEL */
+.info-panel {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* FORM */
+.form-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-box input,
+.form-box textarea {
+  padding: 8px;
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 6px;
+}
+
+.form-box textarea {
+  min-height: 60px;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.form-buttons button {
+  padding: 10px 14px;
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.form-buttons button:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* LEAFLET */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  background: black;
+  filter: grayscale(100%);
 }
