@@ -1,0 +1,405 @@
+[
+  {
+    "text": "URGENT: Major fire at downtown Chicago, multiple buildings burning!",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 94.51184391975403,
+      "confidence_level": "high",
+      "severity": 3,
+      "matched_keywords": [
+        "fire",
+        "burning"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.2
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 90,
+          "confidence_level": "high",
+          "matched_keywords": [
+            "fire",
+            "burning"
+          ]
+        },
+        "supervised": {
+          "detected": false,
+          "reason": "model_not_trained"
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 99.02368783950806,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 99.02368783950806,
+            "no disaster": 0.3743109991773963,
+            "flood disaster": 0.32224771566689014,
+            "earthquake disaster": 0.2797528635710478
+          }
+        }
+      }
+    },
+    "timestamp": "2026-01-21T05:41:53.541354"
+  },
+  {
+    "text": "Flash flood warning, water levels rising rapidly, evacuate now!",
+    "result": {
+      "detected": true,
+      "disaster_type": "flood",
+      "confidence": 84.51132833957672,
+      "confidence_level": "high",
+      "severity": 3,
+      "matched_keywords": [
+        "flood",
+        "flash flood"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "flood": 2.2
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 70,
+          "confidence_level": "high",
+          "matched_keywords": [
+            "flood",
+            "flash flood"
+          ]
+        },
+        "supervised": {
+          "detected": false,
+          "reason": "model_not_trained"
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 99.02265667915344,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "flood disaster": 99.02265667915344,
+            "fire disaster": 0.3548316191881895,
+            "no disaster": 0.3490671282634139,
+            "earthquake disaster": 0.27344461996108294
+          }
+        }
+      }
+    },
+    "timestamp": "2026-01-21T05:41:55.153794"
+  },
+  {
+    "text": "Earthquake magnitude 7.2 felt across the city, buildings damaged",
+    "result": {
+      "detected": true,
+      "disaster_type": "earthquake",
+      "confidence": 89.60379302501678,
+      "confidence_level": "high",
+      "severity": 3,
+      "matched_keywords": [
+        "earthquake",
+        "quake"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "earthquake": 2.2
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 80,
+          "confidence_level": "high",
+          "matched_keywords": [
+            "earthquake",
+            "quake"
+          ]
+        },
+        "supervised": {
+          "detected": false,
+          "reason": "model_not_trained"
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 99.20758605003357,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "earthquake disaster": 99.20758605003357,
+            "no disaster": 0.2989215077832341,
+            "flood disaster": 0.25197674985975027,
+            "fire disaster": 0.24152491241693497
+          }
+        }
+      }
+    },
+    "timestamp": "2026-01-21T05:41:56.600190"
+  },
+  {
+    "text": "Nice sunny day today",
+    "result": {
+      "detected": true,
+      "disaster_type": "no",
+      "confidence": 86.94301843643188,
+      "confidence_level": "high",
+      "severity": 3,
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "no": 1.2
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": false,
+          "reason": "model_not_trained"
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "no",
+          "confidence": 86.94301843643188,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "no disaster": 86.94301843643188,
+            "flood disaster": 4.730852320790291,
+            "earthquake disaster": 4.272077977657318,
+            "fire disaster": 4.054050147533417
+          }
+        }
+      }
+    },
+    "timestamp": "2026-01-21T05:41:57.840142"
+  },
+  {
+    "text": "URGENT: Major fire at downtown Chicago, multiple buildings burning!",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 77.10314342602031,
+      "confidence_level": "high",
+      "severity": 5,
+      "matched_keywords": [
+        "fire",
+        "burning"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "fire": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 90,
+          "confidence_level": "high",
+          "matched_keywords": [
+            "fire",
+            "burning"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 42.28574243855287,
+          "confidence_level": "medium",
+          "severity": 5,
+          "all_probabilities": {
+            "earthquake": 20.73191226478958,
+            "fire": 42.28574243855287,
+            "flood": 17.600450599992246,
+            "none": 19.381894696665288
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 99.02368783950806,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 99.02368783950806,
+            "no disaster": 0.3743109991773963,
+            "flood disaster": 0.32224771566689014,
+            "earthquake disaster": 0.2797528635710478
+          }
+        }
+      }
+    },
+    "timestamp": "2026-01-21T05:51:47.947172"
+  },
+  {
+    "text": "Flash flood warning, water levels rising rapidly, evacuate now!",
+    "result": {
+      "detected": true,
+      "disaster_type": "flood",
+      "confidence": 72.42076399837482,
+      "confidence_level": "high",
+      "severity": 4,
+      "matched_keywords": [
+        "flood",
+        "flash flood"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "flood": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 70,
+          "confidence_level": "high",
+          "matched_keywords": [
+            "flood",
+            "flash flood"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 48.23963531597103,
+          "confidence_level": "medium",
+          "severity": 4,
+          "all_probabilities": {
+            "earthquake": 17.078402162963275,
+            "fire": 16.888596833802573,
+            "flood": 48.23963531597103,
+            "none": 17.793365687263123
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 99.02265667915344,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "flood disaster": 99.02265667915344,
+            "fire disaster": 0.3548316191881895,
+            "no disaster": 0.3490671282634139,
+            "earthquake disaster": 0.27344461996108294
+          }
+        }
+      }
+    },
+    "timestamp": "2026-01-21T05:51:49.458174"
+  },
+  {
+    "text": "Earthquake magnitude 7.2 felt across the city, buildings damaged",
+    "result": {
+      "detected": true,
+      "disaster_type": "earthquake",
+      "confidence": 75.3191139555626,
+      "confidence_level": "high",
+      "severity": 5,
+      "matched_keywords": [
+        "earthquake",
+        "quake"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "earthquake": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 80,
+          "confidence_level": "high",
+          "matched_keywords": [
+            "earthquake",
+            "quake"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 46.74975581665425,
+          "confidence_level": "medium",
+          "severity": 5,
+          "all_probabilities": {
+            "earthquake": 46.74975581665425,
+            "fire": 18.942468798487536,
+            "flood": 16.151751422743548,
+            "none": 18.156023962114684
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 99.20758605003357,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "earthquake disaster": 99.20758605003357,
+            "no disaster": 0.2989215077832341,
+            "flood disaster": 0.25197674985975027,
+            "fire disaster": 0.24152491241693497
+          }
+        }
+      }
+    },
+    "timestamp": "2026-01-21T05:51:50.929072"
+  },
+  {
+    "text": "Nice sunny day today",
+    "result": {
+      "detected": true,
+      "disaster_type": "none",
+      "confidence": 42.145498606049586,
+      "confidence_level": "medium",
+      "severity": 1,
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "none": 1.5,
+        "no": 1.2
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "none",
+          "confidence": 42.145498606049586,
+          "confidence_level": "medium",
+          "severity": 1,
+          "all_probabilities": {
+            "earthquake": 19.271939834874217,
+            "fire": 18.91267080385197,
+            "flood": 19.669890755224234,
+            "none": 42.145498606049586
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "no",
+          "confidence": 86.94301843643188,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "no disaster": 86.94301843643188,
+            "flood disaster": 4.730852320790291,
+            "earthquake disaster": 4.272077977657318,
+            "fire disaster": 4.054050147533417
+          }
+        }
+      }
+    },
+    "timestamp": "2026-01-21T05:51:52.132831"
+  }
+]
