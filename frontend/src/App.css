@@ -17,19 +17,16 @@ body {
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255,255,255,0.08);
   backdrop-filter: blur(12px);
   border-radius: 20px;
   border: 1px solid rgba(255,255,255,0.2);
 }
 
-/* MAP */
-.map-panel {
-  flex: 2;
-  height: 100%;
-}
+/* Map */
+.map-panel { flex: 2; }
 
-/* RIGHT SIDE */
+/* Right Side */
 .right-panel {
   flex: 1;
   display: flex;
@@ -37,15 +34,9 @@ body {
   gap: 20px;
 }
 
-/* MENU */
-.menu-panel {
-  padding: 20px;
-}
-
-.menu-title {
-  text-align: center;
-  margin-bottom: 20px;
-}
+/* Menu */
+.menu-panel { padding: 20px; }
+.menu-panel h1 { text-align: center; }
 
 .menu-buttons {
   display: flex;
@@ -53,28 +44,14 @@ body {
   gap: 12px;
 }
 
-.menu-buttons button {
-  padding: 14px;
-  font-size: 18px;
-  background: transparent;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.4);
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.menu-buttons button:hover {
-  background: rgba(255,255,255,0.15);
-}
-
-/* INFO PANEL */
+/* Info Panel */
 .info-panel {
   padding: 20px;
   flex: 1;
   overflow-y: auto;
 }
 
-/* FORM */
+/* New Incident */
 .form-box {
   display: flex;
   flex-direction: column;
@@ -82,7 +59,9 @@ body {
 }
 
 .form-box input,
-.form-box textarea {
+.form-box textarea,
+.modal input,
+.modal textarea {
   padding: 8px;
   background: transparent;
   color: white;
@@ -90,33 +69,149 @@ body {
   border-radius: 6px;
 }
 
-.form-box textarea {
-  min-height: 60px;
-}
-
-.form-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 10px;
-}
-
-.form-buttons button {
-  padding: 10px 14px;
-  background: transparent;
-  color: white;
+/* Incident boxes */
+.incident-box {
   border: 1px solid rgba(255,255,255,0.4);
+  padding: 12px;
+  margin: 10px 0;
   border-radius: 8px;
   cursor: pointer;
 }
+.incident-box:hover { background: rgba(255,255,255,0.1); }
 
-.form-buttons button:hover {
-  background: rgba(255,255,255,0.15);
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* LEAFLET */
+.modal {
+  width: 380px;
+  padding: 20px;
+}
+
+/* Layouts */
+.severity-box,
+.population-box,
+.routing-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.population-box .row,
+.routing-box .row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.population-box label,
+.routing-box label {
+  width: 55%;
+}
+
+.population-box input,
+.routing-box input {
+  width: 40%;
+}
+
+/* Buttons */
+.form-buttons,
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+button {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  padding: 10px 14px;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.6);
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+/* Leaflet */
 .leaflet-container {
   height: 100% !important;
   width: 100% !important;
-  background: black;
   filter: grayscale(100%);
+}
+
+/* ========================= */
+/* RESOURCES SPACING & LAYOUT FIX */
+/* ========================= */
+
+.resource-panel,
+.resources-subbox {
+  padding: 24px;
+}
+
+.resource-panel h2,
+.resources-subbox h2 {
+  margin-bottom: 18px;
+}
+
+/* Space out each row */
+.resource-panel .row,
+.resources-subbox .row {
+  margin-bottom: 14px;
+}
+
+/* Align labels and inputs neatly */
+.resource-panel .row,
+.resources-subbox .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.resource-panel label,
+.resources-subbox label {
+  flex: 1;
+  text-align: left;
+}
+
+.resource-panel input,
+.resources-subbox input {
+  flex: 1;
+  max-width: 220px;
+}
+
+/* Buttons spacing */
+.resource-actions,
+.resources-scene .form-buttons {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Make sections breathe */
+.resources-scene {
+  display: flex;
+  gap: 24px;
+}
+
+/* Slight vertical separation between top and bottom panels */
+.resources-subbox {
+  margin-top: 20px;
 }
