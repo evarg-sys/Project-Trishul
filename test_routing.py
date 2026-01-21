@@ -2,7 +2,26 @@ import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from disaster_routing import DisasterRouting
 
-router = DisasterRouting("Chicago, Illinois, USA")
+# Get Mapbox token from environment variable
+MAPBOX_TOKEN = 'pk.eyJ1IjoiZXZhcmcyMiIsImEiOiJjbWtsYWZiY24wMnlxM2ZxMmllaG9lcTVrIn0.-SwCQABH_NnyiNNMCgv6mA'
+''
+if MAPBOX_TOKEN == 'pk.eyJ1IjoiZXZhcmcyMiIsImEiOiJjbWtsYWZiY24wMnlxM2ZxMmllaG9lcTVrIn0.-SwCQABH_NnyiNNMCgv6mA':
+    print("WARNING: Please set your MAPBOX_TOKEN environment variable")
+    print("export MAPBOX_TOKEN='your_token_here'")
+    print("Or edit this file to add your token directly.\n")
+
+# Initialize router
+router = DisasterRouting("Chicago, Illinois, USA", mapbox_token=MAPBOX_TOKEN)
+
+# Load network ONCE at startup
+print("=" * 50)
+print("INITIALIZING DISASTER ROUTING SYSTEM")
+print("=" * 50)
+print("Loading Chicago road network...")
+print("(This may take 30-60 seconds on first run)")
+router.load_network()
+print("✓ Network loaded successfully!")
+print("=" * 50)
 
 while True:
     print("\n==============================")
@@ -21,8 +40,6 @@ while True:
     if main_choice != "1":
         print("Invalid choice. Try again.")
         continue
-
-    router.load_network()
 
     addr = input("\nEnter disaster address (or 'back' to return): ")
     if addr.lower() == "back":
