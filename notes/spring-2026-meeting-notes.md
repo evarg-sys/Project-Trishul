@@ -7,6 +7,19 @@
 * check planned milestones
 * review next steps
 
+### February 13 Meeting
+Next steps:
+* Eric
+  * ML model development (aiming to finish in two weeks)
+  * develop routing parameters (seasonality, potholes, other bottlenecks)
+  * find ways to integrate ward organization
+* Deepikka
+  * continue working on integration (frontend/backend)
+  * continue exploring additional features to add
+    * cross-street congestion, points/events of interest, etc.
+* Abhijith
+  * continue integrating ML models
+  * integrate with new frontend button(s)
 
 ### February 6 Meeting:
 * Goals for the project?
