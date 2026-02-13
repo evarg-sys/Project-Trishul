@@ -6,7 +6,7 @@ import countriesData from "./data/countries.json";
 
 export default function App() {
   const [selected, setSelected] = useState(null);
-  const [view, setView] = useState("country"); // country | new | incidents | analytics | resources
+  const [view, setView] = useState("country"); 
   const [modal, setModal] = useState(null);
 
   const [saved, setSaved] = useState(false);
@@ -152,8 +152,9 @@ export default function App() {
           )}
 
           {view === "resources" && (
-            <div className="resources-scene">
+            <div className="resources-clean">
               <h2>Resources</h2>
+
               <div className="resource-top-buttons">
                 <button>Fire Trucks</button>
                 <button>Ambulances</button>
@@ -161,28 +162,38 @@ export default function App() {
                 <button>Others</button>
               </div>
 
-              <div className="resources-grid">
-                <div className="resource-panel glass">
-                  <h3>All Resources</h3>
-                  <div className="row"><label>Fire Trucks Availability:</label><input /></div>
-                  <div className="row"><label>Ambulance Availability:</label><input /></div>
-                  <div className="row"><label>Police Units Availability:</label><input /></div>
-                  <div className="row"><label>Other Availability:</label><input /></div>
-                  <div className="row"><label>Total Availability:</label><input /></div>
+              <div className="glass resource-card">
+                <h3>All Resources</h3>
+
+                <div className="resource-row">
+                  <label>Fire Trucks Availability</label>
+                  <input />
                 </div>
 
-                <div className="resource-panel glass">
-                  <h3>[Resource Chosen]</h3>
-                  <div className="row"><label>Name:</label><input /></div>
-                  <div className="row"><label>Status:</label><input /></div>
-                  <div className="row"><label>Closest Location Distance:</label><input /></div>
-                  <div className="row"><label>Last Active:</label><input /></div>
-                  <div className="row"><label>Estimated Response Time:</label><input /></div>
-                  <div className="resource-actions">
-                    <button>Assign</button>
-                    <button>Reserve</button>
-                    <button>Disable</button>
-                  </div>
+                <div className="resource-row">
+                  <label>Ambulance Availability</label>
+                  <input />
+                </div>
+
+                <div className="resource-row">
+                  <label>Police Units Availability</label>
+                  <input />
+                </div>
+
+                <div className="resource-row">
+                  <label>Other Availability</label>
+                  <input />
+                </div>
+
+                <div className="resource-row">
+                  <label>Total Availability</label>
+                  <input />
+                </div>
+
+                <div className="resource-actions">
+                  <button>Assign</button>
+                  <button>Reserve</button>
+                  <button>Disable</button>
                 </div>
               </div>
             </div>
@@ -190,14 +201,14 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODALS (unchanged) */}
+      {/* MODALS */}
       {modal && (
         <div className="modal-overlay">
           <div className="modal glass">
             {modal === "incidentList" && <h2>Full Incident List (placeholder)</h2>}
 
             {modal === "severity" && (
-              <div className="severity-box">
+              <div className="form-box">
                 <h2>Severity Scaling</h2>
                 <label>Input:</label>
                 <input value={severityInput} onChange={e=>setSeverityInput(e.target.value)} />
@@ -228,9 +239,26 @@ export default function App() {
               </div>
             )}
 
-            {modal === "feasibility" && <input value={feasibilityData} onChange={e=>setFeasibilityData(e.target.value)} placeholder="Feasibility score" />}
-            {modal === "ambulances" && <input value={ambulanceData} onChange={e=>setAmbulanceData(e.target.value)} placeholder="Ambulances ready?" />}
-            {modal === "weather" && <input value={weatherData} onChange={e=>setWeatherData(e.target.value)} placeholder="Weather constraints" />}
+            {modal === "feasibility" && (
+              <div className="form-box">
+                <h2>Feasibility Score</h2>
+                <input value={feasibilityData} onChange={e=>setFeasibilityData(e.target.value)} placeholder="Feasibility score" />
+              </div>
+            )}
+            
+            {modal === "ambulances" && (
+              <div className="form-box">
+                <h2>Ambulances Ready?</h2>
+                <input value={ambulanceData} onChange={e=>setAmbulanceData(e.target.value)} placeholder="Ambulances ready?" />
+              </div>
+            )}
+
+            {modal === "weather" && (
+              <div className="form-box">
+                <h2>Weather Constraints</h2>
+                <input value={weatherData} onChange={e=>setWeatherData(e.target.value)} placeholder="Weather constraints" />
+              </div>
+            )}
 
             <div className="modal-buttons">
               <button onClick={() => setModal(null)}>Close</button>
