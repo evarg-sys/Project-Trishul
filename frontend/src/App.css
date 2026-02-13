@@ -7,6 +7,7 @@ body {
   margin: 0;
   background: black;
   color: white;
+  overflow: hidden;
 }
 
 .app-root {
@@ -17,14 +18,14 @@ body {
 }
 
 .glass {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
   border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Map */
-.map-panel { flex: 2; }
+.map-panel { flex: 2; overflow: hidden; }
 
 /* Right Side */
 .right-panel {
@@ -34,9 +35,8 @@ body {
   gap: 20px;
 }
 
-/* Menu */
 .menu-panel { padding: 20px; }
-.menu-panel h1 { text-align: center; }
+.menu-panel h1 { text-align: center; font-size: 1.6rem; }
 
 .menu-buttons {
   display: flex;
@@ -44,95 +44,92 @@ body {
   gap: 12px;
 }
 
-/* Info Panel */
 .info-panel {
   padding: 20px;
   flex: 1;
   overflow-y: auto;
 }
 
-/* New Incident */
-.form-box {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* Unified Glass Inputs */
+input,
+textarea {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  width: 100%;
+  transition: all 0.2s ease;
 }
 
-.form-box input,
-.form-box textarea,
-.modal input,
-.modal textarea {
-  padding: 8px;
-  background: transparent;
-  color: white;
-  border: 1px solid rgba(255,255,255,0.4);
-  border-radius: 6px;
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Layout for Row-based forms (Analytics, Modals) */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 12px;
+}
+
+.row label {
+  flex: 1;
+  text-align: left;
+}
+
+.row input {
+  flex: 1;
+  max-width: 200px;
 }
 
 /* Incident boxes */
 .incident-box {
-  border: 1px solid rgba(255,255,255,0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 12px;
   margin: 10px 0;
   border-radius: 8px;
   cursor: pointer;
 }
-.incident-box:hover { background: rgba(255,255,255,0.1); }
+.incident-box:hover { background: rgba(255, 255, 255, 0.1); }
 
 /* Modal */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 999;
 }
 
 .modal {
-  width: 380px;
-  padding: 20px;
-}
-
-/* Layouts */
-.severity-box,
-.population-box,
-.routing-box {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.population-box .row,
-.routing-box .row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.population-box label,
-.routing-box label {
-  width: 55%;
-}
-
-.population-box input,
-.routing-box input {
-  width: 40%;
+  width: 400px;
+  padding: 25px;
 }
 
 /* Buttons */
 .form-buttons,
-.modal-buttons {
+.modal-buttons,
+.resource-actions {
   display: flex;
   justify-content: space-between;
+  gap: 10px;
   margin-top: 15px;
 }
 
 button {
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(8px);
   color: white;
-  border: 1px solid rgba(255,255,255,0.3);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 10px;
   cursor: pointer;
   padding: 10px 14px;
@@ -140,12 +137,36 @@ button {
 }
 
 button:hover {
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.6);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
-button:active {
-  transform: scale(0.97);
+/* Resources & Analytics specific cleanup */
+.resources-subbox {
+  margin-top: 20px;
+  padding: 15px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.resource-top-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.resource-card {
+  padding: 20px;
+}
+
+.resource-row {
+  margin-bottom: 12px;
+}
+
+.resource-row label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
 }
 
 /* Leaflet */
@@ -153,65 +174,4 @@ button:active {
   height: 100% !important;
   width: 100% !important;
   filter: grayscale(100%);
-}
-
-/* ========================= */
-/* RESOURCES SPACING & LAYOUT FIX */
-/* ========================= */
-
-.resource-panel,
-.resources-subbox {
-  padding: 24px;
-}
-
-.resource-panel h2,
-.resources-subbox h2 {
-  margin-bottom: 18px;
-}
-
-/* Space out each row */
-.resource-panel .row,
-.resources-subbox .row {
-  margin-bottom: 14px;
-}
-
-/* Align labels and inputs neatly */
-.resource-panel .row,
-.resources-subbox .row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.resource-panel label,
-.resources-subbox label {
-  flex: 1;
-  text-align: left;
-}
-
-.resource-panel input,
-.resources-subbox input {
-  flex: 1;
-  max-width: 220px;
-}
-
-/* Buttons spacing */
-.resource-actions,
-.resources-scene .form-buttons {
-  margin-top: 24px;
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-}
-
-/* Make sections breathe */
-.resources-scene {
-  display: flex;
-  gap: 24px;
-}
-
-/* Slight vertical separation between top and bottom panels */
-.resources-subbox {
-  margin-top: 20px;
 }
