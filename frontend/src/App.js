@@ -4,51 +4,49 @@ import { useState } from "react";
 import "./App.css";
 import countriesData from "./data/countries.json";
 
+const RESOURCE_ICONS = {
+  "Fire Trucks": "🚒",
+  Ambulances: "🚑",
+  "Police Units": "🚓",
+  Others: "🚧",
+};
+
 export default function App() {
   const [selected, setSelected] = useState(null);
-  const [view, setView] = useState("country"); 
+  const [view, setView] = useState("country");
   const [modal, setModal] = useState(null);
+  const [resourceModal, setResourceModal] = useState(null);
+
+  // Per-resource popup field state — ready to be replaced by backend data
+  const [resourceFields, setResourceFields] = useState({
+    "Fire Trucks":  { total: "", nearestWithin100m: "", estimatedResponseTime: "" },
+    Ambulances:     { total: "", nearestWithin100m: "", estimatedResponseTime: "" },
+    "Police Units": { total: "", nearestWithin100m: "", estimatedResponseTime: "" },
+    Others:         { total: "", nearestWithin100m: "", estimatedResponseTime: "" },
+  });
+
+  const updateResourceField = (resource, field, value) => {
+    setResourceFields(prev => ({
+      ...prev,
+      [resource]: { ...prev[resource], [field]: value },
+    }));
+  };
 
   const [saved, setSaved] = useState(false);
   const [draft, setDraft] = useState({
-    location: "",
-    description: "",
-    predicted: "",
-    confidence: "",
-    keywords: "",
+    location: "", description: "", predicted: "", confidence: "", keywords: "",
   });
-
   const [severityInput, setSeverityInput] = useState("");
   const [severityScore, setSeverityScore] = useState("");
   const [severityNotes, setSeverityNotes] = useState("");
-
-  const [populationData, setPopulationData] = useState({
-    area: "",
-    buildings: "",
-    type: "",
-    people: "",
-  });
-
-  const [routingData, setRoutingData] = useState({
-    station: "",
-    eta: "",
-    traffic: "",
-    blocks: "",
-  });
-
+  const [populationData, setPopulationData] = useState({ area: "", buildings: "", type: "", people: "" });
+  const [routingData, setRoutingData] = useState({ station: "", eta: "", traffic: "", blocks: "" });
   const [feasibilityData, setFeasibilityData] = useState("");
   const [ambulanceData, setAmbulanceData] = useState("");
   const [weatherData, setWeatherData] = useState("");
 
-  const resetDraft = () => {
-    setDraft({
-      location: "",
-      description: "",
-      predicted: "",
-      confidence: "",
-      keywords: "",
-    });
-  };
+  const resetDraft = () =>
+    setDraft({ location: "", description: "", predicted: "", confidence: "", keywords: "" });
 
   const updateDraft = (field, value) => {
     setDraft({ ...draft, [field]: value });
@@ -56,12 +54,7 @@ export default function App() {
   };
 
   const onEachCountry = (feature, layer) => {
-    layer.on({
-      click: () => {
-        setSelected(feature.properties.name);
-        setView("country");
-      },
-    });
+    layer.on({ click: () => { setSelected(feature.properties.name); setView("country"); } });
   };
 
   return (
@@ -93,10 +86,7 @@ export default function App() {
         <div className="info-panel glass">
           {view === "country" &&
             (selected ? (
-              <>
-                <h2>{selected}</h2>
-                <p>Description will go here later</p>
-              </>
+              <><h2>{selected}</h2><p>Description will go here later</p></>
             ) : (
               <p>Click a country</p>
             ))}
@@ -117,19 +107,18 @@ export default function App() {
             <div className="form-box">
               <h2>New Incident</h2>
               <label>Location / Area</label>
-              <input value={draft.location} onChange={e=>updateDraft("location", e.target.value)} />
+              <input value={draft.location} onChange={e => updateDraft("location", e.target.value)} />
               <label>Description</label>
-              <textarea value={draft.description} onChange={e=>updateDraft("description", e.target.value)} />
+              <textarea value={draft.description} onChange={e => updateDraft("description", e.target.value)} />
               <label>Predicted Type</label>
-              <input value={draft.predicted} onChange={e=>updateDraft("predicted", e.target.value)} />
+              <input value={draft.predicted} onChange={e => updateDraft("predicted", e.target.value)} />
               <label>Confidence</label>
-              <input value={draft.confidence} onChange={e=>updateDraft("confidence", e.target.value)} />
+              <input value={draft.confidence} onChange={e => updateDraft("confidence", e.target.value)} />
               <label>Keywords Found</label>
-              <input value={draft.keywords} onChange={e=>updateDraft("keywords", e.target.value)} />
-
+              <input value={draft.keywords} onChange={e => updateDraft("keywords", e.target.value)} />
               <div className="form-buttons">
                 <button onClick={() => { resetDraft(); setSaved(false); setView("country"); }}>Submit</button>
-                <button onClick={() => { if(!saved) resetDraft(); setSaved(false); setView("country"); }}>Close</button>
+                <button onClick={() => { if (!saved) resetDraft(); setSaved(false); setView("country"); }}>Close</button>
                 <button onClick={() => { setSaved(true); alert("Draft saved successfully!"); }}>Save Draft</button>
               </div>
             </div>
@@ -154,42 +143,20 @@ export default function App() {
           {view === "resources" && (
             <div className="resources-clean">
               <h2>Resources</h2>
-
               <div className="resource-top-buttons">
-                <button>Fire Trucks</button>
-                <button>Ambulances</button>
-                <button>Police Units</button>
-                <button>Others</button>
+                {["Fire Trucks", "Ambulances", "Police Units", "Others"].map((name) => (
+                  <button key={name} onClick={() => setResourceModal(name)}>
+                    {RESOURCE_ICONS[name]} {name}
+                  </button>
+                ))}
               </div>
-
               <div className="glass resource-card">
                 <h3>All Resources</h3>
-
-                <div className="resource-row">
-                  <label>Fire Trucks Availability</label>
-                  <input />
-                </div>
-
-                <div className="resource-row">
-                  <label>Ambulance Availability</label>
-                  <input />
-                </div>
-
-                <div className="resource-row">
-                  <label>Police Units Availability</label>
-                  <input />
-                </div>
-
-                <div className="resource-row">
-                  <label>Other Availability</label>
-                  <input />
-                </div>
-
-                <div className="resource-row">
-                  <label>Total Availability</label>
-                  <input />
-                </div>
-
+                <div className="resource-row"><label>Fire Trucks Availability</label><input /></div>
+                <div className="resource-row"><label>Ambulance Availability</label><input /></div>
+                <div className="resource-row"><label>Police Units Availability</label><input /></div>
+                <div className="resource-row"><label>Other Availability</label><input /></div>
+                <div className="resource-row"><label>Total Availability</label><input /></div>
                 <div className="resource-actions">
                   <button>Assign</button>
                   <button>Reserve</button>
@@ -201,65 +168,100 @@ export default function App() {
         </div>
       </div>
 
-      {/* MODALS */}
+      {/* ── RESOURCE DETAIL POPUP ── */}
+      {resourceModal && (
+        <div className="modal-overlay" onClick={() => setResourceModal(null)}>
+          <div className="modal glass resource-popup" onClick={e => e.stopPropagation()}>
+
+            <div className="resource-popup-header">
+              <span className="resource-popup-icon">{RESOURCE_ICONS[resourceModal]}</span>
+              <h2>{resourceModal}</h2>
+            </div>
+
+            <div className="resource-detail-row">
+              <label>Total Availability</label>
+              <input
+                value={resourceFields[resourceModal].total}
+                onChange={e => updateResourceField(resourceModal, "total", e.target.value)}
+              />
+            </div>
+
+            <div className="resource-detail-row">
+              <label>Nearest Within 100m</label>
+              <input
+                value={resourceFields[resourceModal].nearestWithin100m}
+                onChange={e => updateResourceField(resourceModal, "nearestWithin100m", e.target.value)}
+              />
+            </div>
+
+            <div className="resource-detail-row">
+              <label>Estimated Response Time</label>
+              <input
+                value={resourceFields[resourceModal].estimatedResponseTime}
+                onChange={e => updateResourceField(resourceModal, "estimatedResponseTime", e.target.value)}
+              />
+            </div>
+
+            <div className="modal-buttons">
+              <button onClick={() => setResourceModal(null)}>Close</button>
+              <button onClick={() => { alert("Saved!"); setResourceModal(null); }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EXISTING MODALS */}
       {modal && (
         <div className="modal-overlay">
           <div className="modal glass">
             {modal === "incidentList" && <h2>Full Incident List (placeholder)</h2>}
-
             {modal === "severity" && (
               <div className="form-box">
                 <h2>Severity Scaling</h2>
                 <label>Input:</label>
-                <input value={severityInput} onChange={e=>setSeverityInput(e.target.value)} />
+                <input value={severityInput} onChange={e => setSeverityInput(e.target.value)} />
                 <label>Severity Score:</label>
-                <input value={severityScore} onChange={e=>setSeverityScore(e.target.value)} />
+                <input value={severityScore} onChange={e => setSeverityScore(e.target.value)} />
                 <label>Notes (Keywords Found):</label>
-                <textarea value={severityNotes} onChange={e=>setSeverityNotes(e.target.value)} />
+                <textarea value={severityNotes} onChange={e => setSeverityNotes(e.target.value)} />
               </div>
             )}
-
             {modal === "population" && (
               <div className="population-box">
                 <h2>Population / Exposure</h2>
-                <div className="row"><label>Area Size:</label><input value={populationData.area} onChange={e=>setPopulationData({...populationData, area: e.target.value})}/></div>
-                <div className="row"><label>Buildings in Area:</label><input value={populationData.buildings} onChange={e=>setPopulationData({...populationData, buildings: e.target.value})}/></div>
-                <div className="row"><label>Dominant Building:</label><input value={populationData.type} onChange={e=>setPopulationData({...populationData, type: e.target.value})}/></div>
-                <div className="row"><label>Estimated People:</label><input value={populationData.people} onChange={e=>setPopulationData({...populationData, people: e.target.value})}/></div>
+                <div className="row"><label>Area Size:</label><input value={populationData.area} onChange={e => setPopulationData({ ...populationData, area: e.target.value })} /></div>
+                <div className="row"><label>Buildings in Area:</label><input value={populationData.buildings} onChange={e => setPopulationData({ ...populationData, buildings: e.target.value })} /></div>
+                <div className="row"><label>Dominant Building:</label><input value={populationData.type} onChange={e => setPopulationData({ ...populationData, type: e.target.value })} /></div>
+                <div className="row"><label>Estimated People:</label><input value={populationData.people} onChange={e => setPopulationData({ ...populationData, people: e.target.value })} /></div>
               </div>
             )}
-
             {modal === "routing" && (
               <div className="routing-box">
                 <h2>Routing and Travel Time</h2>
-                <div className="row"><label>Nearest Station:</label><input value={routingData.station} onChange={e=>setRoutingData({...routingData, station:e.target.value})}/></div>
-                <div className="row"><label>ETA (current):</label><input value={routingData.eta} onChange={e=>setRoutingData({...routingData, eta:e.target.value})}/></div>
-                <div className="row"><label>Traffic:</label><input value={routingData.traffic} onChange={e=>setRoutingData({...routingData, traffic:e.target.value})}/></div>
-                <div className="row"><label>Closures/Blocks:</label><input value={routingData.blocks} onChange={e=>setRoutingData({...routingData, blocks:e.target.value})}/></div>
+                <div className="row"><label>Nearest Station:</label><input value={routingData.station} onChange={e => setRoutingData({ ...routingData, station: e.target.value })} /></div>
+                <div className="row"><label>ETA (current):</label><input value={routingData.eta} onChange={e => setRoutingData({ ...routingData, eta: e.target.value })} /></div>
+                <div className="row"><label>Traffic:</label><input value={routingData.traffic} onChange={e => setRoutingData({ ...routingData, traffic: e.target.value })} /></div>
+                <div className="row"><label>Closures/Blocks:</label><input value={routingData.blocks} onChange={e => setRoutingData({ ...routingData, blocks: e.target.value })} /></div>
               </div>
             )}
-
             {modal === "feasibility" && (
               <div className="form-box">
                 <h2>Feasibility Score</h2>
-                <input value={feasibilityData} onChange={e=>setFeasibilityData(e.target.value)} placeholder="Feasibility score" />
+                <input value={feasibilityData} onChange={e => setFeasibilityData(e.target.value)} />
               </div>
             )}
-            
             {modal === "ambulances" && (
               <div className="form-box">
                 <h2>Ambulances Ready?</h2>
-                <input value={ambulanceData} onChange={e=>setAmbulanceData(e.target.value)} placeholder="Ambulances ready?" />
+                <input value={ambulanceData} onChange={e => setAmbulanceData(e.target.value)} />
               </div>
             )}
-
             {modal === "weather" && (
               <div className="form-box">
                 <h2>Weather Constraints</h2>
-                <input value={weatherData} onChange={e=>setWeatherData(e.target.value)} placeholder="Weather constraints" />
+                <input value={weatherData} onChange={e => setWeatherData(e.target.value)} />
               </div>
             )}
-
             <div className="modal-buttons">
               <button onClick={() => setModal(null)}>Close</button>
               <button onClick={() => { alert("Saved!"); setModal(null); }}>Save</button>

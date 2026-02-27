@@ -1,0 +1,507 @@
+
+in my resources, i have this placeholder buttons such as firetrucks and ambulances and when i want to click on one, i want a pop up page that has the total number of availabilities, the number of the nearest one within 100 meters and also estimated response time
+
+this is all the code i have so far:
+app.css:
+* {
+  font-family: "Times New Roman", Times, serif;
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  overflow: hidden;
+}
+.app-root {
+  display: flex;
+  height: 100vh;
+  gap: 20px;
+  padding: 20px;
+}
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+/* Map */
+.map-panel { flex: 2; overflow: hidden; }
+/* Right Side */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.menu-panel { padding: 20px; }
+.menu-panel h1 { text-align: center; font-size: 1.6rem; }
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.info-panel {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+/* Unified Glass Inputs */
+input,
+textarea {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+}
+/* Layout for Row-based forms (Analytics, Modals) */
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 12px;
+}
+.row label {
+  flex: 1;
+  text-align: left;
+}
+.row input {
+  flex: 1;
+  max-width: 200px;
+}
+/* Incident boxes */
+.incident-box {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.incident-box:hover { background: rgba(255, 255, 255, 0.1); }
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.modal {
+  width: 400px;
+  padding: 25px;
+}
+/* Buttons */
+.form-buttons,
+.modal-buttons,
+.resource-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 15px;
+}
+button {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  padding: 10px 14px;
+  transition: all 0.2s ease;
+}
+button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+/* Resources & Analytics specific cleanup */
+.resources-subbox {
+  margin-top: 20px;
+  padding: 15px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.resource-top-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+.resource-card {
+  padding: 20px;
+}
+.resource-row {
+  margin-bottom: 12px;
+}
+.resource-row label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.9rem;
+}
+/* Leaflet */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  filter: grayscale(100%);
+}
+
+app.js:
+import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import { useState } from "react";
+import "./App.css";
+import countriesData from "./data/countries.json";
+export default function App() {
+  const [selected, setSelected] = useState(null);
+  const [view, setView] = useState("country"); 
+  const [modal, setModal] = useState(null);
+  const [saved, setSaved] = useState(false);
+  const [draft, setDraft] = useState({
+    location: "",
+    description: "",
+    predicted: "",
+    confidence: "",
+    keywords: "",
+  });
+  const [severityInput, setSeverityInput] = useState("");
+  const [severityScore, setSeverityScore] = useState("");
+  const [severityNotes, setSeverityNotes] = useState("");
+  const [populationData, setPopulationData] = useState({
+    area: "",
+    buildings: "",
+    type: "",
+    people: "",
+  });
+  const [routingData, setRoutingData] = useState({
+    station: "",
+    eta: "",
+    traffic: "",
+    blocks: "",
+  });
+  const [feasibilityData, setFeasibilityData] = useState("");
+  const [ambulanceData, setAmbulanceData] = useState("");
+  const [weatherData, setWeatherData] = useState("");
+  const resetDraft = () => {
+    setDraft({
+      location: "",
+      description: "",
+      predicted: "",
+      confidence: "",
+      keywords: "",
+    });
+  };
+  const updateDraft = (field, value) => {
+    setDraft({ ...draft, [field]: value });
+    setSaved(false);
+  };
+  const onEachCountry = (feature, layer) => {
+    layer.on({
+      click: () => {
+        setSelected(feature.properties.name);
+        setView("country");
+      },
+    });
+  };
+  return (
+    <div className="app-root">
+      {/* MAP */}
+      <div className="map-panel glass">
+        <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            subdomains="abcd"
+          />
+          <GeoJSON data={countriesData} onEachFeature={onEachCountry} />
+        </MapContainer>
+      </div>
+      {/* RIGHT SIDE */}
+      <div className="right-panel">
+        <div className="menu-panel glass">
+          <h1>Disaster Response Planning System</h1>
+          <div className="menu-buttons">
+            <button onClick={() => setModal("incidentList")}>Incident Lists</button>
+            <button onClick={() => setView("incidents")}>Active Incidents</button>
+            <button onClick={() => setView("resources")}>Resources</button>
+            <button onClick={() => setView("analytics")}>Analytics</button>
+            <button onClick={() => setView("new")}>New Incident</button>
+          </div>
+        </div>
+        <div className="info-panel glass">
+          {view === "country" &&
+            (selected ? (
+              <>
+                <h2>{selected}</h2>
+                <p>Description will go here later</p>
+              </>
+            ) : (
+              <p>Click a country</p>
+            ))}
+          {view === "incidents" && (
+            <>
+              <h2>Active Incidents</h2>
+              <div className="incident-box" onClick={() => setModal("severity")}>Severity Score</div>
+              <div className="incident-box" onClick={() => setModal("population")}>Population / Exposure</div>
+              <div className="incident-box" onClick={() => setModal("routing")}>Routing & Travel Time</div>
+              <div className="incident-box" onClick={() => setModal("feasibility")}>Feasibility Score</div>
+              <div className="incident-box" onClick={() => setModal("ambulances")}>Ambulances Ready?</div>
+              <div className="incident-box" onClick={() => setModal("weather")}>Weather Constraints?</div>
+            </>
+          )}
+          {view === "new" && (
+            <div className="form-box">
+              <h2>New Incident</h2>
+              <label>Location / Area</label>
+              <input value={draft.location} onChange={e=>updateDraft("location", e.target.value)} />
+              <label>Description</label>
+              <textarea value={draft.description} onChange={e=>updateDraft("description", e.target.value)} />
+              <label>Predicted Type</label>
+              <input value={draft.predicted} onChange={e=>updateDraft("predicted", e.target.value)} />
+              <label>Confidence</label>
+              <input value={draft.confidence} onChange={e=>updateDraft("confidence", e.target.value)} />
+              <label>Keywords Found</label>
+              <input value={draft.keywords} onChange={e=>updateDraft("keywords", e.target.value)} />
+              <div className="form-buttons">
+                <button onClick={() => { resetDraft(); setSaved(false); setView("country"); }}>Submit</button>
+                <button onClick={() => { if(!saved) resetDraft(); setSaved(false); setView("country"); }}>Close</button>
+                <button onClick={() => { setSaved(true); alert("Draft saved successfully!"); }}>Save Draft</button>
+              </div>
+            </div>
+          )}
+          {view === "analytics" && (
+            <div className="analytics-box">
+              <h2>Analytics</h2>
+              <div className="row"><label>Average Response Time:</label><input /></div>
+              <div className="row"><label>AI Accuracy:</label><input /></div>
+              <div className="row"><label>Active Incidents:</label><input /></div>
+              <div className="row"><label>Average Severity:</label><input /></div>
+              <div className="resources-subbox">
+                <h3>Resources</h3>
+                <div className="row"><label>Fire Truck Utilization:</label><input /></div>
+                <div className="row"><label>Ambulance Utilization:</label><input /></div>
+                <div className="row"><label>Police Units Utilization:</label><input /></div>
+              </div>
+            </div>
+          )}
+          {view === "resources" && (
+            <div className="resources-clean">
+              <h2>Resources</h2>
+              <div className="resource-top-buttons">
+                <button>Fire Trucks</button>
+                <button>Ambulances</button>
+                <button>Police Units</button>
+                <button>Others</button>
+              </div>
+              <div className="glass resource-card">
+                <h3>All Resources</h3>
+                <div className="resource-row">
+                  <label>Fire Trucks Availability</label>
+                  <input />
+                </div>
+                <div className="resource-row">
+                  <label>Ambulance Availability</label>
+                  <input />
+                </div>
+                <div className="resource-row">
+                  <label>Police Units Availability</label>
+                  <input />
+                </div>
+                <div className="resource-row">
+                  <label>Other Availability</label>
+                  <input />
+                </div>
+                <div className="resource-row">
+                  <label>Total Availability</label>
+                  <input />
+                </div>
+                <div className="resource-actions">
+                  <button>Assign</button>
+                  <button>Reserve</button>
+                  <button>Disable</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      {/* MODALS */}
+      {modal && (
+        <div className="modal-overlay">
+          <div className="modal glass">
+            {modal === "incidentList" && <h2>Full Incident List (placeholder)</h2>}
+            {modal === "severity" && (
+              <div className="form-box">
+                <h2>Severity Scaling</h2>
+                <label>Input:</label>
+                <input value={severityInput} onChange={e=>setSeverityInput(e.target.value)} />
+                <label>Severity Score:</label>
+                <input value={severityScore} onChange={e=>setSeverityScore(e.target.value)} />
+                <label>Notes (Keywords Found):</label>
+                <textarea value={severityNotes} onChange={e=>setSeverityNotes(e.target.value)} />
+              </div>
+            )}
+            {modal === "population" && (
+              <div className="population-box">
+                <h2>Population / Exposure</h2>
+                <div className="row"><label>Area Size:</label><input value={populationData.area} onChange={e=>setPopulationData({...populationData, area: e.target.value})}/></div>
+                <div className="row"><label>Buildings in Area:</label><input value={populationData.buildings} onChange={e=>setPopulationData({...populationData, buildings: e.target.value})}/></div>
+                <div className="row"><label>Dominant Building:</label><input value={populationData.type} onChange={e=>setPopulationData({...populationData, type: e.target.value})}/></div>
+                <div className="row"><label>Estimated People:</label><input value={populationData.people} onChange={e=>setPopulationData({...populationData, people: e.target.value})}/></div>
+              </div>
+            )}
+            {modal === "routing" && (
+              <div className="routing-box">
+                <h2>Routing and Travel Time</h2>
+                <div className="row"><label>Nearest Station:</label><input value={routingData.station} onChange={e=>setRoutingData({...routingData, station:e.target.value})}/></div>
+                <div className="row"><label>ETA (current):</label><input value={routingData.eta} onChange={e=>setRoutingData({...routingData, eta:e.target.value})}/></div>
+                <div className="row"><label>Traffic:</label><input value={routingData.traffic} onChange={e=>setRoutingData({...routingData, traffic:e.target.value})}/></div>
+                <div className="row"><label>Closures/Blocks:</label><input value={routingData.blocks} onChange={e=>setRoutingData({...routingData, blocks:e.target.value})}/></div>
+              </div>
+            )}
+            {modal === "feasibility" && (
+              <div className="form-box">
+                <h2>Feasibility Score</h2>
+                <input value={feasibilityData} onChange={e=>setFeasibilityData(e.target.value)} placeholder="Feasibility score" />
+              </div>
+            )}
+
+            {modal === "ambulances" && (
+              <div className="form-box">
+                <h2>Ambulances Ready?</h2>
+                <input value={ambulanceData} onChange={e=>setAmbulanceData(e.target.value)} placeholder="Ambulances ready?" />
+              </div>
+            )}
+            {modal === "weather" && (
+              <div className="form-box">
+                <h2>Weather Constraints</h2>
+                <input value={weatherData} onChange={e=>setWeatherData(e.target.value)} placeholder="Weather constraints" />
+              </div>
+            )}
+            <div className="modal-buttons">
+              <button onClick={() => setModal(null)}>Close</button>
+              <button onClick={() => { alert("Saved!"); setModal(null); }}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+Show more
+1:56 AM
+I'll add click handlers to the resource buttons (Fire Trucks, Ambulances, Police Units, Others) that open a popup modal showing total availability, nearest unit within 100m, and estimated response time.
+
+
+Reading frontend design skill
+Reading frontend design skill
+Here's the plan: I'll add a resourceModal state and a resourceDetails object with placeholder data for each resource type. Clicking Fire Trucks, Ambulances, Police Units, or Others will open a styled popup with total availability, nearest unit count within 100m, and estimated response time.
+
+
+Updated App.js with resource popup modals
+Updated App.js with resource popup modals
+Now add the CSS for the new popup styles to your App.css:
+
+
+Created a file, read a file
+Created a file, read a file
+Here's what changed and how to wire it up:
+
+In App.js:
+
+Added a RESOURCE_DATA object at the top with placeholder values for each resource type — total units, available count, nearest-within-100m count, estimated response time, and nearest unit name. Swap these for real state/API data when ready.
+Added a resourceModal state (separate from the existing modal state so the two don't conflict).
+The four resource buttons now call setResourceModal("Fire Trucks") etc. on click.
+The new popup renders a 3-column stat grid (Total / Available / Within 100m), two detail rows (Nearest Unit + Response Time), and a Dispatch Nearest button.
+Clicking the overlay backdrop also closes the popup.
+In resource-popup.css:
+
+Paste the contents at the bottom of your App.css — it adds styles for .resource-popup, .resource-stat-grid, .resource-stat-card, .resource-detail-row, and the green highlight for response time.
+App
+JS 
+Resource popup
+Code · CSS 
+i like it but instead i dont want placeholder text in the popup and a space to include the information like an empty textfield sicne later it will be connected to backend
+
+1:59 AM
+
+Reading the current App.js output
+Reading the current App.js output
+Got it — I'll replace the stat cards and detail rows with labelled empty input fields, removing all the RESOURCE_DATA placeholder values.
+
+
+Created 2 files, ran a command
+Created 2 files, ran a command
+Now update the CSS — the popup no longer needs the old stat grid styles, just clean label+input rows:
+
+
+Ran a command, created a file, read a file
+Ran a command, created a file, read a file
+Here's what changed:
+
+App.js — The RESOURCE_DATA object with all the hardcoded numbers is gone. In its place is a resourceFields state object with empty strings for each resource's three fields. The popup now renders three labelled <input> fields (Total Availability, Nearest Within 100m, Estimated Response Time) that are fully editable and persist their values while the session is open. When you connect your backend, just populate resourceFields from your API response instead.
+
+resource-popup.css — Stripped down to just the header and stacked label+input row styles — no more stat cards or highlight colours since those were tied to the hardcoded data.
+
+App
+JS 
+Resource popup
+Code · CSS 
+
+
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Resource popup · CSS
+Copy
+
+/* ── RESOURCE POPUP ── paste at the bottom of App.css ── */
+
+.resource-popup {
+  width: 420px;
+  padding: 28px;
+}
+
+.resource-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.resource-popup-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.resource-popup-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+}
+
+/* Label + input rows inside the popup */
+.resource-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.resource-detail-row label {
+  font-size: 0.82rem;
+  opacity: 0.65;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
