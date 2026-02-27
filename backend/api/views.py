@@ -10,6 +10,10 @@ def report_disaster(request):
     serializer = DisasterSerializer(data=request.data)
     if serializer.is_valid():
         disaster = serializer.save()
+
+        from .tasks import analyze_disaster
+        analyze_disaster.delay(disaster.id) # Basically triggers the ml analysis in the background
+
         return Response({
             'disaster_id': disaster.id,
             'status': 'reported'

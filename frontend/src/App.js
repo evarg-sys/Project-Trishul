@@ -3,7 +3,7 @@ import "leaflet/dist/leaflet.css";
 import { useState, useEffect } from "react";
 import "./App.css";
 import countriesData from "./data/countries.json";
-import { reportDisaster, getActiveDisasters, getFireStations } from "./services/api";
+import { reportDisaster, getActiveDisasters, getFireStations, pollDisasterAnalysis } from "./services/api";
 
 const RESOURCE_ICONS = {
   "Fire Trucks": "🚒",
@@ -52,6 +52,10 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+  // ML analysis result state
+  const [analysisResult, setAnalysisResult] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+
   // Load active disasters when switching to incidents view
   useEffect(() => {
     if (view === "incidents") {
@@ -90,17 +94,31 @@ export default function App() {
 
     setSubmitting(true);
     setSubmitError("");
+    setAnalysisResult(null);
 
     try {
-      await reportDisaster({
+      const response = await reportDisaster({
         disaster_type: draft.predicted || "fire",
         address: draft.location,
         description: draft.description,
       });
-      alert("Incident reported successfully!");
+
+      const disasterId = response.data.disaster_id;
+
+      // Start polling for ML results
+      setAnalyzing(true);
       resetDraft();
-      setSaved(false);
-      setView("country");
+      setView("analysis");
+
+      pollDisasterAnalysis(disasterId, (disaster) => {
+        setAnalysisResult(disaster);
+
+        if (disaster.status === "analyzed") {
+          setAnalyzing(false);
+          fetchActiveDisasters();
+        }
+      });
+
     } catch (error) {
       console.error("Failed to report incident:", error);
       setSubmitError("Failed to report incident. Is the backend running?");
@@ -217,6 +235,67 @@ export default function App() {
 
                 <button onClick={() => { if (!saved) resetDraft(); setSaved(false); setView("country"); }}>Close</button>
                 <button onClick={() => { setSaved(true); alert("Draft saved successfully!"); }}>Save Draft</button>
+              </div>
+            </div>
+          )}
+
+          {/* Analysis results view - shows after submitting */}
+          {view === "analysis" && (
+            <div className="form-box">
+              <h2>Incident Analysis</h2>
+
+              {analyzing && (
+                <p style={{ color: "#aaa", marginTop: "10px" }}>
+                  Analyzing incident... please wait
+                </p>
+              )}
+
+              {analysisResult && (
+                <div>
+                  <div className="row">
+                    <label>Type:</label>
+                    <input readOnly value={analysisResult.disaster_type || ""} />
+                  </div>
+                  <div className="row">
+                    <label>Address:</label>
+                    <input readOnly value={analysisResult.address || ""} />
+                  </div>
+                  <div className="row">
+                    <label>Confidence Score:</label>
+                    <input readOnly value={analysisResult.confidence_score ? `${analysisResult.confidence_score.toFixed(1)}%` : "Analyzing..."} />
+                  </div>
+                  <div className="row">
+                    <label>Severity Score:</label>
+                    <input readOnly value={analysisResult.severity_score || "Analyzing..."} />
+                  </div>
+                  <div className="row">
+                    <label>Population Affected:</label>
+                    <input readOnly value={analysisResult.population_affected ? analysisResult.population_affected.toLocaleString() : "Analyzing..."} />
+                  </div>
+                  <div className="row">
+                    <label>Latitude:</label>
+                    <input readOnly value={analysisResult.latitude || "Analyzing..."} />
+                  </div>
+                  <div className="row">
+                    <label>Longitude:</label>
+                    <input readOnly value={analysisResult.longitude || "Analyzing..."} />
+                  </div>
+                  <div className="row">
+                    <label>Status:</label>
+                    <input readOnly value={analysisResult.status || ""} />
+                  </div>
+
+                  {analysisResult.status === "analyzed" && (
+                    <p style={{ color: "green", marginTop: "10px" }}>
+                      ✓ Analysis complete
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="form-buttons">
+                <button onClick={() => setView("incidents")}>View All Incidents</button>
+                <button onClick={() => setView("new")}>Report Another</button>
               </div>
             </div>
           )}
