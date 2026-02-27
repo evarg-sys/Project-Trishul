@@ -7,6 +7,17 @@
 * check planned milestones
 * review next steps
 
+### February 27 Meeting
+Next steps:
+* Eric
+  * Test and improve models for non-urgent / low severity events
+  * Improve population estimates
+* Deepikka
+  * Include map to display routing
+* Abhijith
+  * Work on a "clear" button for concluded events
+  * Explore solutions for resolving ambiguous places
+
 ### February 13 Meeting
 Next steps:
 * Eric
