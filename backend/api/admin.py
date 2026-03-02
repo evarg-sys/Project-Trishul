@@ -1,3 +1,7 @@
 from django.contrib import admin
+from .models import Disaster, FireStation, Hospital, DispatchDecision
 
-# Register your models here.
+admin.site.register(Disaster)
+admin.site.register(FireStation)
+admin.site.register(Hospital)
+admin.site.register(DispatchDecision)

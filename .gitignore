@@ -13,7 +13,6 @@ venv/
 .vscode/
 
 # Generated files
-*.html
 cache/
 
 # OS
