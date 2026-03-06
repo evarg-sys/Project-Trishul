@@ -15,7 +15,17 @@ const RESOURCE_ICONS = {
   Others: "🚧",
 };
 
+// Chicago center coordinates and zoom
+const CHICAGO_CENTER = [41.8781, -87.6298];
+const CHICAGO_ZOOM = 10;
+
 export default function App() {
+  // ── Title page state ──────────────────────────────────────────
+  const [showTitlePage, setShowTitlePage] = useState(true);
+  const [titleLocation, setTitleLocation] = useState("");
+  const [titleZipCode, setTitleZipCode] = useState("");
+
+  // ── Existing state (unchanged) ────────────────────────────────
   const [selected, setSelected] = useState(null);
   const [view, setView] = useState("country");
   const [modal, setModal] = useState(null);
@@ -152,11 +162,51 @@ export default function App() {
     layer.on({ click: () => { setSelected(feature.properties.name); setView("country"); } });
   };
 
+  // ── TITLE PAGE ────────────────────────────────────────────────
+  if (showTitlePage) {
+    return (
+      <div className="title-page">
+        <div className="title-page-inner">
+          <h1 className="title-page-heading">Disaster Response<br />Planning System</h1>
+
+          <div className="title-card glass">
+            <label className="title-label">Location</label>
+            <input
+              className="title-input"
+              type="text"
+              placeholder="Enter location"
+              value={titleLocation}
+              onChange={e => setTitleLocation(e.target.value)}
+            />
+            <label className="title-label" style={{ marginTop: "12px" }}>Zip Code</label>
+            <input
+              className="title-input"
+              type="text"
+              placeholder="Enter zip code"
+              value={titleZipCode}
+              onChange={e => setTitleZipCode(e.target.value)}
+            />
+          </div>
+
+          <div
+            className="title-card glass title-incident-btn"
+            onClick={() => setShowTitlePage(false)}
+          >
+            view full incident list
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MAIN APP (unchanged layout) ───────────────────────────────
   return (
     <div className="app-root">
-      {/* MAP */}
+      {/* BACK BUTTON — always visible, bottom left */}
+      <button className="back-btn" onClick={() => setShowTitlePage(true)}>← Back</button>
+      {/* MAP — centered on Chicago */}
       <div className="map-panel glass">
-        <MapContainer center={[20, 0]} zoom={2} style={{ height: "100%", width: "100%" }}>
+        <MapContainer center={CHICAGO_CENTER} zoom={CHICAGO_ZOOM} style={{ height: "100%", width: "100%" }}>
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
           <GeoJSON data={countriesData} onEachFeature={onEachCountry} />
         </MapContainer>
