@@ -1,6 +1,9 @@
 import csv
 import requests
+import json
+import os
 from collections import Counter
+from pathlib import Path
 
 class PopulationDensityModel:
     
@@ -16,56 +19,107 @@ class PopulationDensityModel:
         'industrial': 0.0,
     }
     
-    def __init__(self, chi_factor=1.0):
+    def __init__(self, chi_factor=1.0, cache_dir=None):
         self.chi_factor = chi_factor
         self.census_data = {}
+        self.cache_dir = cache_dir or Path(__file__).parent / '.cache'
+        self.cache_dir.mkdir(exist_ok=True)
+        self.api_cache = self._load_api_cache()
+    
+    def _get_cache_path(self):
+        """Get the path to the API cache file"""
+        return self.cache_dir / 'api_cache.json'
+    
+    def _load_api_cache(self):
+        """Load cached API responses"""
+        cache_path = self._get_cache_path()
+        if cache_path.exists():
+            try:
+                with open(cache_path, 'r') as f:
+                    return json.load(f)
+            except:
+                return {}
+        return {}
+    
+    def _save_api_cache(self):
+        """Save API cache to file"""
+        cache_path = self._get_cache_path()
+        with open(cache_path, 'w') as f:
+            json.dump(self.api_cache, f, indent=2)
+    
+    def _get_cache_key(self, key_type, *args):
+        """Generate a cache key"""
+        return f"{key_type}::{':'.join(str(arg) for arg in args)}"
     
     def load_census_data(self, csv_file_path):
-        count = 0
-        with open(csv_file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            lines = content.strip().split('\n')
-            
-            headers = lines[0].split('\t')
-            print(f"Headers found: {headers[:5]}...")
-            
-            for line in lines[1:]:
-                parts = line.split('\t')
-                if len(parts) < 4:
-                    continue
-                
-                geo_type = parts[0].strip()
-                geography = parts[2].strip()
-                
-                if geo_type == 'ZIP Code' and len(geography) == 5 and geography.isdigit():
-                    try:
-                        zipcode = geography
-                        total_pop = int(parts[3].replace(',', ''))
-                        
-                        age_data = {
-                            'total': total_pop,
-                            'age_0_17': int(parts[4].replace(',', '')),
-                            'age_18_29': int(parts[5].replace(',', '')),
-                            'age_30_39': int(parts[6].replace(',', '')),
-                            'age_40_49': int(parts[7].replace(',', '')),
-                            'age_50_59': int(parts[8].replace(',', '')),
-                            'age_60_69': int(parts[9].replace(',', '')),
-                            'age_70_79': int(parts[10].replace(',', '')),
-                            'age_80_plus': int(parts[11].replace(',', '')),
-                        }
-                        
-                        self.census_data[zipcode] = age_data
-                        count += 1
-                        if count <= 5:
-                            print(f"  Loaded ZIP {zipcode}: {total_pop:,} people")
-                        
-                    except (ValueError, IndexError) as e:
-                        continue
+        """Load census data from CSV file with proper CSV parsing"""
+        csv_path = Path(csv_file_path)
         
-        print(f"\nTotal: {len(self.census_data)} ZIP codes loaded")
+        # If relative path, try to find it relative to this file first
+        if not csv_path.is_absolute() and not csv_path.exists():
+            csv_path = Path(__file__).parent.parent.parent / 'data' / csv_file_path
+        
+        if not csv_path.exists():
+            print(f"ERROR: CSV file not found at {csv_path}")
+            return {}
+        
+        count = 0
+        print(f"Loading census data from {csv_path}")
+        
+        try:
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                
+                for row in reader:
+                    # Filter for ZIP codes only
+                    geo_type = row.get('Geography Type', '').strip()
+                    geography = row.get('Geography', '').strip()
+                    
+                    if geo_type == 'ZIP Code' and len(geography) == 5 and geography.isdigit():
+                        try:
+                            zipcode = geography
+                            total_pop = int(row.get('Population - Total', '0').replace(',', ''))
+                            
+                            age_data = {
+                                'total': total_pop,
+                                'age_0_17': int(row.get('Population - Age 0-17', '0').replace(',', '')),
+                                'age_18_29': int(row.get('Population - Age 18-29', '0').replace(',', '')),
+                                'age_30_39': int(row.get('Population - Age 30-39', '0').replace(',', '')),
+                                'age_40_49': int(row.get('Population - Age 40-49', '0').replace(',', '')),
+                                'age_50_59': int(row.get('Population - Age 50-59', '0').replace(',', '')),
+                                'age_60_69': int(row.get('Population - Age 60-69', '0').replace(',', '')),
+                                'age_70_79': int(row.get('Population - Age 70-79', '0').replace(',', '')),
+                                'age_80_plus': int(row.get('Population - Age 80+', '0').replace(',', '')),
+                            }
+                            
+                            self.census_data[zipcode] = age_data
+                            count += 1
+                            if count <= 5:
+                                print(f"  Loaded ZIP {zipcode}: {total_pop:,} people")
+                            
+                        except (ValueError, KeyError) as e:
+                            continue
+        except Exception as e:
+            print(f"ERROR reading CSV: {e}")
+            return {}
+        
+        print(f"\nTotal: {len(self.census_data)} ZIP codes loaded\n")
         return self.census_data
     
+    
     def get_buildings_from_osm(self, lat, lon, radius_meters=1000):
+        """Query OSM for buildings with caching"""
+        cache_key = self._get_cache_key('buildings', lat, lon, radius_meters)
+        
+        # Check cache first
+        if cache_key in self.api_cache:
+            cached = self.api_cache[cache_key]
+            print(f"\nQuerying OSM for buildings around ({lat}, {lon})... (cached)")
+            print(f"Found {cached['total']} buildings")
+            if cached['counts']:
+                print(f"Building type breakdown: {cached['counts']}")
+            return cached['counts'], cached['total']
+        
         overpass_url = "http://overpass-api.de/api/interpreter"
         
         overpass_query = f"""
@@ -98,17 +152,43 @@ class PopulationDensityModel:
                 building_types.append(building_type)
             
             building_counts = Counter(building_types)
+            result_dict = dict(building_counts)
+            total = len(buildings)
             
-            print(f"Found {len(buildings)} buildings")
-            print(f"Building type breakdown: {dict(building_counts)}")
+            # Cache the result
+            self.api_cache[cache_key] = {
+                'counts': result_dict,
+                'total': total
+            }
+            self._save_api_cache()
             
-            return dict(building_counts), len(buildings)
+            print(f"Found {total} buildings")
+            if result_dict:
+                print(f"Building type breakdown: {result_dict}")
+            
+            return result_dict, total
             
         except Exception as e:
             print(f"Error querying OSM: {e}")
+            # Cache empty result
+            self.api_cache[cache_key] = {'counts': {}, 'total': 0}
+            self._save_api_cache()
             return {}, 0
     
+    
     def get_zipcode_from_location(self, lat, lon):
+        """Get zipcode from location coordinates with caching"""
+        cache_key = self._get_cache_key('zipcode', lat, lon)
+        
+        # Check cache first
+        if cache_key in self.api_cache:
+            cached = self.api_cache[cache_key]
+            if cached:
+                print(f"Zipcode (cached): {cached}")
+            else:
+                print("No ZIP code found for this location (cached)")
+            return cached
+        
         nominatim_url = "https://nominatim.openstreetmap.org/reverse"
         
         params = {
@@ -131,6 +211,10 @@ class PopulationDensityModel:
             address = data.get('address', {})
             zipcode = address.get('postcode', '')
             
+            # Cache the result
+            self.api_cache[cache_key] = zipcode or None
+            self._save_api_cache()
+            
             if zipcode:
                 print(f"Found ZIP code: {zipcode}")
                 return zipcode
@@ -140,7 +224,11 @@ class PopulationDensityModel:
                 
         except Exception as e:
             print(f"Error getting ZIP code: {e}")
+            # Cache the error result
+            self.api_cache[cache_key] = None
+            self._save_api_cache()
             return None
+    
     
     def estimate_population(self, area_km2, buildings_data):
         if not buildings_data:
@@ -217,9 +305,10 @@ class PopulationDensityModel:
         return result
 
 
-def run_test():
-    print("="*70)
-    print("POPULATION DENSITY MODEL - PROPER WORKFLOW")
+def run_interactive():
+    """Interactive mode for user input with validation"""
+    print("\n" + "="*70)
+    print("POPULATION DENSITY MODEL - INTERACTIVE MODE")
     print("="*70)
     
     model = PopulationDensityModel(chi_factor=1.0)
@@ -228,7 +317,136 @@ def run_test():
     print("-"*70)
     model.load_census_data('chi_pop.csv')
     
-    print("\n\nStep 2: Get Location from User (using Chicago coordinates as example)")
+    print("\n\nStep 2: Enter Location Information")
+    print("-"*70)
+    print("Example locations:")
+    print("  Downtown Chicago:    41.8781, -87.6298")
+    print("  Lincoln Park:        41.9212, -87.6567")
+    print("  Hyde Park:           41.7943, -87.5907")
+    print()
+    
+    # Input validation loop
+    valid_input = False
+    lat = None
+    lon = None
+    radius_meters = 1000
+    
+    while not valid_input:
+        try:
+            lat_input = input("Enter Latitude (e.g., 41.8781): ").strip()
+            if not lat_input:
+                print("[ERROR] Latitude cannot be empty. Please enter a valid number.")
+                continue
+            
+            lon_input = input("Enter Longitude (e.g., -87.6298): ").strip()
+            if not lon_input:
+                print("[ERROR] Longitude cannot be empty. Please enter a valid number.")
+                continue
+            
+            # Convert to float
+            lat = float(lat_input)
+            lon = float(lon_input)
+            
+            # Validate ranges (rough global bounds)
+            if lat < -90 or lat > 90:
+                print(f"[ERROR] Latitude must be between -90 and 90. Got: {lat}")
+                lat = None
+                lon = None
+                continue
+            
+            if lon < -180 or lon > 180:
+                print(f"[ERROR] Longitude must be between -180 and 180. Got: {lon}")
+                lat = None
+                lon = None
+                continue
+            
+            # Get radius
+            radius_input = input("Enter Radius in meters (default 1000): ").strip()
+            
+            if radius_input:
+                radius_meters = int(radius_input)
+                if radius_meters <= 0:
+                    print("[ERROR] Radius must be greater than 0.")
+                    lat = None
+                    lon = None
+                    continue
+                if radius_meters > 50000:
+                    print("[WARNING] Radius is very large (>50km). This will take longer and may hit API limits.")
+                    confirm = input("Continue anyway? (y/n): ").strip().lower()
+                    if confirm != 'y':
+                        lat = None
+                        lon = None
+                        continue
+            else:
+                radius_meters = 1000
+            
+            # All validations passed
+            valid_input = True
+            
+        except ValueError as e:
+            print(f"[ERROR] Invalid input: {e}")
+            print("Please enter valid numbers. Example:")
+            print("  Latitude: 41.8781")
+            print("  Longitude: -87.6298")
+            print("  Radius: 1000")
+            print()
+            continue
+        except KeyboardInterrupt:
+            print("\n\nExiting...")
+            return
+    
+    # All inputs validated, proceed with estimation
+    print("\n\nStep 3: Running Population Estimation")
+    print("-"*70)
+    print(f"Location: ({lat:.4f}, {lon:.4f})")
+    print(f"Search Radius: {radius_meters}m")
+    print("Fetching building data from OpenStreetMap...")
+    print()
+    
+    result = model.estimate_for_location(lat, lon, radius_meters=radius_meters)
+    
+    if result:
+        print("\n" + "="*70)
+        print("RESULTS")
+        print("="*70)
+        print(f"Location: ({result['location']['lat']:.4f}, {result['location']['lon']:.4f})")
+        print(f"ZIP Code: {result['zipcode']}")
+        print(f"Search Radius: {result['radius_meters']}m")
+        print(f"Area: {result['area_km2']:.2f} km²")
+        print(f"\nBuildings Found: {result['total_buildings']}")
+        print(f"Estimated Population: {result['total_population']:,}")
+        print(f"Population Density: {result['density']:.2f} people/km²")
+        print(f"Estimation Method: {result.get('estimation_method', 'Formula-Based')}")
+        
+        if 'actual_population' in result:
+            print(f"\nCensus Comparison:")
+            print(f"  Census Population: {result['actual_population']:,}")
+            print(f"  Estimation Error: {result['percent_error']:.2f}%")
+            print(f"  Accuracy: {result['accuracy']:.2f}%")
+        else:
+            print(f"\n[WARNING] Census data not found for this ZIP code")
+        
+        print("\n" + "="*70)
+    else:
+        print("[ERROR] Failed to estimate population for this location")
+        print("This could be due to:")
+        print("  - No buildings found in the search area")
+        print("  - Unable to determine ZIP code for this location")
+        print("  - API connection issues")
+
+
+def run_test():
+    print("="*70)
+    print("POPULATION DENSITY MODEL - TEST MODE")
+    print("="*70)
+    
+    model = PopulationDensityModel(chi_factor=1.0)
+    
+    print("\nStep 1: Load Census Data")
+    print("-"*70)
+    model.load_census_data('chi_pop.csv')
+    
+    print("\n\nStep 2: Test Location (Downtown Chicago)")
     print("-"*70)
     lat = 41.8781
     lon = -87.6298
@@ -257,4 +475,13 @@ def run_test():
             print(f"  Accuracy: {result['accuracy']}%")
 
 if __name__ == "__main__":
-    run_test()
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1].lower() == '--interactive':
+        run_interactive()
+    else:
+        print("\nQUICK START OPTIONS:")
+        print("  Run test mode: python population_model.py")
+        print("  Interactive mode: python population_model.py --interactive")
+        print()
+        run_test()

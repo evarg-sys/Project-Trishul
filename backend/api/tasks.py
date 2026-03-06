@@ -70,7 +70,16 @@ def analyze_disaster(disaster_id):
         except Exception as e:
             logger.warning(f"❌ Population model error: {e}")
 
-        # Step 4: Mark as analyzed
+        # Step 4: Compute a priority score based on what we know so far.
+        # No response time is known yet, so this uses severity * population.
+        try:
+            disaster.compute_priority()
+            disaster.save()
+            logger.warning(f"🟠 Priority score set to {disaster.priority_score}")
+        except Exception as e:
+            logger.warning(f"❌ Priority calculation error: {e}")
+
+        # Step 5: Mark as analyzed
         disaster.status = 'analyzed'
         disaster.save()
         return {'success': True, 'disaster_id': disaster_id}

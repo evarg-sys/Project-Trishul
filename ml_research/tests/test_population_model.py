@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+
+# Add parent directory to path so we can import population_model
+sys.path.insert(0, str(Path(__file__).parent.parent / 'population'))
+
 from population_model import PopulationDensityModel
 
 def test_load_census_data():
@@ -6,7 +12,8 @@ def test_load_census_data():
     print("="*70)
     
     model = PopulationDensityModel()
-    model.load_census_data('chi_pop.csv')
+    csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+    model.load_census_data(str(csv_path))
     
     assert len(model.census_data) > 0, "No census data loaded"
     print(f"✓ Successfully loaded {len(model.census_data)} ZIP codes")
@@ -21,7 +28,8 @@ def test_downtown_chicago():
     print("="*70)
     
     model = PopulationDensityModel(chi_factor=1.0)
-    model.load_census_data('chi_pop.csv')
+    csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+    model.load_census_data(str(csv_path))
     
     lat, lon = 41.8781, -87.6298
     print(f"Testing location: ({lat}, {lon})")
@@ -47,7 +55,8 @@ def test_lincoln_park():
     print("="*70)
     
     model = PopulationDensityModel(chi_factor=1.0)
-    model.load_census_data('chi_pop.csv')
+    csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+    model.load_census_data(str(csv_path))
     
     lat, lon = 41.9212, -87.6567
     print(f"Testing location: ({lat}, {lon})")
@@ -69,7 +78,8 @@ def test_hyde_park():
     print("="*70)
     
     model = PopulationDensityModel(chi_factor=1.0)
-    model.load_census_data('chi_pop.csv')
+    csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+    model.load_census_data(str(csv_path))
     
     lat, lon = 41.7943, -87.5907
     print(f"Testing location: ({lat}, {lon})")
@@ -88,7 +98,8 @@ def test_wicker_park():
     print("="*70)
     
     model = PopulationDensityModel(chi_factor=1.0)
-    model.load_census_data('chi_pop.csv')
+    csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+    model.load_census_data(str(csv_path))
     
     lat, lon = 41.9095, -87.6773
     print(f"Testing location: ({lat}, {lon})")
@@ -107,7 +118,8 @@ def test_pilsen():
     print("="*70)
     
     model = PopulationDensityModel(chi_factor=1.0)
-    model.load_census_data('chi_pop.csv')
+    csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+    model.load_census_data(str(csv_path))
     
     lat, lon = 41.8563, -87.6598
     print(f"Testing location: ({lat}, {lon})")
@@ -133,7 +145,8 @@ def test_chi_factor_comparison():
     for chi in [0.8, 1.0, 1.2, 1.5]:
         print(f"\nTesting with chi_factor = {chi}")
         model = PopulationDensityModel(chi_factor=chi)
-        model.load_census_data('chi_pop.csv')
+        csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+        model.load_census_data(str(csv_path))
         
         result = model.estimate_for_location(lat, lon, radius_meters=1000)
         
@@ -184,7 +197,8 @@ def test_different_radii():
     for radius in [500, 1000, 1500]:
         print(f"\nRadius: {radius}m")
         model = PopulationDensityModel(chi_factor=1.0)
-        model.load_census_data('chi_pop.csv')
+        csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+        model.load_census_data(str(csv_path))
         
         result = model.estimate_for_location(lat, lon, radius_meters=radius)
         
@@ -208,7 +222,8 @@ def test_multiple_locations():
     ]
     
     model = PopulationDensityModel(chi_factor=1.0)
-    model.load_census_data('chi_pop.csv')
+    csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
+    model.load_census_data(str(csv_path))
     
     print(f"\n{'Area':<15} {'ZIP':<8} {'Buildings':<12} {'Estimated Pop':<15} {'Density'}")
     print("-"*70)

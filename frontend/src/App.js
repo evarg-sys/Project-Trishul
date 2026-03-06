@@ -194,6 +194,11 @@ export default function App() {
                     onClick={() => setModal("severity")}
                   >
                     {disaster.disaster_type.toUpperCase()} — {disaster.address}
+                    {disaster.priority_score != null && (
+                      <span style={{ float: 'right', fontWeight: 'bold' }}>
+                        P: {disaster.priority_score.toFixed(1)}
+                      </span>
+                    )}
                   </div>
                 ))
               )}
@@ -283,6 +288,10 @@ export default function App() {
                   <div className="row">
                     <label>Status:</label>
                     <input readOnly value={analysisResult.status || ""} />
+                  </div>
+                  <div className="row">
+                    <label>Priority Score:</label>
+                    <input readOnly value={analysisResult.priority_score != null ? analysisResult.priority_score.toFixed(1) : ""} />
                   </div>
 
                   {analysisResult.status === "analyzed" && (
