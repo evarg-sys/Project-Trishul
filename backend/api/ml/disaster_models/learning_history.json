@@ -511,5 +511,390 @@
       }
     },
     "timestamp": "2026-02-27T09:01:21.475528"
+  },
+  {
+    "text": "fire fire in the building, people are trapped",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 63.42232064725579,
+      "confidence_level": "medium",
+      "severity": 5,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "fire": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 60.95749963288368,
+          "confidence_level": "medium",
+          "severity": 5,
+          "all_probabilities": {
+            "earthquake": 12.44452000250605,
+            "fire": 60.95749963288368,
+            "flood": 12.503229916356062,
+            "none": 14.094750448254217
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 99.30946230888367,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 99.30946230888367,
+            "no disaster": 0.3820523153990507,
+            "flood disaster": 0.16157962381839752,
+            "earthquake disaster": 0.14690820826217532
+          }
+        }
+      }
+    },
+    "timestamp": "2026-02-27T16:31:28.497224"
+  },
+  {
+    "text": "fire building on fire",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 64.23604130869948,
+      "confidence_level": "medium",
+      "severity": 5,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "fire": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 63.65227342026959,
+          "confidence_level": "medium",
+          "severity": 5,
+          "all_probabilities": {
+            "earthquake": 11.96429733391785,
+            "fire": 63.65227342026959,
+            "flood": 12.042744102058917,
+            "none": 12.340685143753639
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 99.05585050582886,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 99.05585050582886,
+            "no disaster": 0.5118170287460089,
+            "flood disaster": 0.2616709563881159,
+            "earthquake disaster": 0.17065482679754496
+          }
+        }
+      }
+    },
+    "timestamp": "2026-03-05T03:48:25.025881"
+  },
+  {
+    "text": "fire building in fire",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 62.316670956780406,
+      "confidence_level": "medium",
+      "severity": 4,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "fire": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 62.92794150879948,
+          "confidence_level": "medium",
+          "severity": 4,
+          "all_probabilities": {
+            "earthquake": 12.20649168582685,
+            "fire": 62.92794150879948,
+            "flood": 12.276342867175053,
+            "none": 12.589223938198616
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 94.02207136154175,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 94.02207136154175,
+            "no disaster": 2.4846160784363747,
+            "flood disaster": 1.8818961456418037,
+            "earthquake disaster": 1.6114214435219765
+          }
+        }
+      }
+    },
+    "timestamp": "2026-03-05T03:50:53.947203"
+  },
+  {
+    "text": "fire building on fire",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 64.23604130869948,
+      "confidence_level": "medium",
+      "severity": 5,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "fire": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 63.65227342026959,
+          "confidence_level": "medium",
+          "severity": 5,
+          "all_probabilities": {
+            "earthquake": 11.96429733391785,
+            "fire": 63.65227342026959,
+            "flood": 12.042744102058917,
+            "none": 12.340685143753639
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 99.05585050582886,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 99.05585050582886,
+            "no disaster": 0.5118170287460089,
+            "flood disaster": 0.2616709563881159,
+            "earthquake disaster": 0.17065482679754496
+          }
+        }
+      }
+    },
+    "timestamp": "2026-03-05T23:24:17.755612"
+  },
+  {
+    "text": "fire fire",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 60.967583487362326,
+      "confidence_level": "medium",
+      "severity": 4,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "fire": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 57.67444798329669,
+          "confidence_level": "medium",
+          "severity": 4,
+          "all_probabilities": {
+            "earthquake": 13.910826635966636,
+            "fire": 57.67444798329669,
+            "flood": 14.018732502085063,
+            "none": 14.395992878651631
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 95.22830247879028,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 95.22830247879028,
+            "no disaster": 2.454642578959465,
+            "flood disaster": 1.2979542836546898,
+            "earthquake disaster": 1.0191019624471664
+          }
+        }
+      }
+    },
+    "timestamp": "2026-03-06T00:37:01.763214"
+  },
+  {
+    "text": "fire building on fire, people are trapped",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 64.1782167480462,
+      "confidence_level": "medium",
+      "severity": 5,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "fire": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 63.11329213561808,
+          "confidence_level": "medium",
+          "severity": 5,
+          "all_probabilities": {
+            "earthquake": 12.139464569929821,
+            "fire": 63.11329213561808,
+            "flood": 12.217984786842756,
+            "none": 12.52925850760935
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 99.42135810852051,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 99.42135810852051,
+            "no disaster": 0.33681411296129227,
+            "flood disaster": 0.12512279208749533,
+            "earthquake disaster": 0.11670654639601707
+          }
+        }
+      }
+    },
+    "timestamp": "2026-03-06T00:55:52.303345"
+  },
+  {
+    "text": "fire fire",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 60.967583487362326,
+      "confidence_level": "medium",
+      "severity": 4,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "strong",
+      "voting_details": {
+        "fire": 3.7
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 57.67444798329669,
+          "confidence_level": "medium",
+          "severity": 4,
+          "all_probabilities": {
+            "earthquake": 13.910826635966636,
+            "fire": 57.67444798329669,
+            "flood": 14.018732502085063,
+            "none": 14.395992878651631
+          }
+        },
+        "unsupervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 95.22830247879028,
+          "confidence_level": "high",
+          "method": "zero_shot",
+          "all_scores": {
+            "fire disaster": 95.22830247879028,
+            "no disaster": 2.454642578959465,
+            "flood disaster": 1.2979542836546898,
+            "earthquake disaster": 1.0191019624471664
+          }
+        }
+      }
+    },
+    "timestamp": "2026-03-06T01:00:23.773019"
   }
 ]

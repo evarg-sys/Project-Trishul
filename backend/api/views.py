@@ -35,7 +35,6 @@ def _estimate_response_time_minutes(lat, lon, response_type):
         speed_km_per_min = 0.6  # ~36 km/h
         dispatch_buffer = 2.0
     else:
-        # Generic fallback for unknown types.
         return 15.0
 
     nearest_distance = None
@@ -76,21 +75,23 @@ def _estimate_population(lat, lon):
     except Exception:
         return 0
 
+
 @api_view(['POST'])
 def report_disaster(request):
     """Report a new disaster"""
-    serializer = DisasterSerializer(data=request.data)
+    data = request.data.copy()
+    data['disaster_type'] = data.get('disaster_type', 'fire').lower()
+    serializer = DisasterSerializer(data=data)
     if serializer.is_valid():
         disaster = serializer.save()
-
         from .tasks import analyze_disaster
-        analyze_disaster.delay(disaster.id) # Basically triggers the ml analysis in the background
-
+        analyze_disaster.delay(disaster.id)
         return Response({
             'disaster_id': disaster.id,
             'status': 'reported'
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def get_disaster(request, disaster_id):
@@ -102,6 +103,7 @@ def get_disaster(request, disaster_id):
     except Disaster.DoesNotExist:
         return Response({'error': 'Disaster not found'}, status=status.HTTP_404_NOT_FOUND)
 
+
 @api_view(['GET'])
 def get_active_disasters(request):
     """Get all active disasters"""
@@ -109,11 +111,35 @@ def get_active_disasters(request):
     serializer = DisasterSerializer(disasters, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 def get_fire_stations(request):
     """Get all fire stations"""
     stations = FireStation.objects.filter(operational=True)
     serializer = FireStationSerializer(stations, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+def resolve_disaster(request, disaster_id):
+    """Resolve a disaster"""
+    try:
+        disaster = Disaster.objects.get(id=disaster_id)
+        from django.utils import timezone
+        disaster.status = 'resolved'
+        disaster.resolution_notes = request.data.get('resolution_notes', '')
+        disaster.resolved_at = timezone.now()
+        disaster.save()
+        return Response({'success': True, 'message': 'Incident resolved'})
+    except Disaster.DoesNotExist:
+        return Response({'error': 'Disaster not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def get_resolved_disasters(request):
+    """Get all resolved disasters"""
+    disasters = Disaster.objects.filter(status='resolved')
+    serializer = DisasterSerializer(disasters, many=True)
     return Response(serializer.data)
 
 
@@ -150,13 +176,7 @@ def batch_priority_calculation(request):
     for idx, item in enumerate(incidents):
         location = (item.get('location') or '').strip()
         if not location:
-            results.append(
-                {
-                    'index': idx,
-                    'location': '',
-                    'error': 'location is required',
-                }
-            )
+            results.append({'index': idx, 'location': '', 'error': 'location is required'})
             continue
 
         disaster_type = (item.get('disaster_type') or 'fire').strip().lower()
@@ -180,29 +200,21 @@ def batch_priority_calculation(request):
                     lon = geo.longitude
 
         if lat is None or lon is None:
-            results.append(
-                {
-                    'index': idx,
-                    'location': location,
-                    'disaster_type': disaster_type,
-                    'response_type': response_type,
-                    'severity_score': severity_score,
-                    'error': 'could not geocode location',
-                }
-            )
+            results.append({
+                'index': idx,
+                'location': location,
+                'disaster_type': disaster_type,
+                'response_type': response_type,
+                'severity_score': severity_score,
+                'error': 'could not geocode location',
+            })
             continue
 
         try:
             lat = float(lat)
             lon = float(lon)
         except (TypeError, ValueError):
-            results.append(
-                {
-                    'index': idx,
-                    'location': location,
-                    'error': 'latitude/longitude must be numeric',
-                }
-            )
+            results.append({'index': idx, 'location': location, 'error': 'latitude/longitude must be numeric'})
             continue
 
         if item.get('population_affected') is not None:
@@ -221,26 +233,20 @@ def batch_priority_calculation(request):
         else:
             response_time_minutes = _estimate_response_time_minutes(lat, lon, response_type)
 
-        priority_score = calculate_priority(
-            severity_score,
-            population_affected,
-            response_time_minutes,
-        )
+        priority_score = calculate_priority(severity_score, population_affected, response_time_minutes)
 
-        results.append(
-            {
-                'index': idx,
-                'location': location,
-                'disaster_type': disaster_type,
-                'response_type': response_type,
-                'latitude': lat,
-                'longitude': lon,
-                'severity_score': severity_score,
-                'population_affected': population_affected,
-                'response_time_minutes': response_time_minutes,
-                'priority_score': round(priority_score, 4),
-            }
-        )
+        results.append({
+            'index': idx,
+            'location': location,
+            'disaster_type': disaster_type,
+            'response_type': response_type,
+            'latitude': lat,
+            'longitude': lon,
+            'severity_score': severity_score,
+            'population_affected': population_affected,
+            'response_time_minutes': response_time_minutes,
+            'priority_score': round(priority_score, 4),
+        })
 
     ranked = sorted(
         [r for r in results if 'priority_score' in r],
@@ -251,11 +257,9 @@ def batch_priority_calculation(request):
     for rank, row in enumerate(ranked, start=1):
         row['rank'] = rank
 
-    return Response(
-        {
-            'count': len(results),
-            'ranked_count': len(ranked),
-            'results': ranked,
-            'errors': [r for r in results if 'error' in r],
-        }
-    )
+    return Response({
+        'count': len(results),
+        'ranked_count': len(ranked),
+        'results': ranked,
+        'errors': [r for r in results if 'error' in r],
+    })

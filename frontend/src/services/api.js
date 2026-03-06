@@ -44,3 +44,9 @@ export const pollDisasterAnalysis = (disasterId, onUpdate, maxAttempts = 20) => 
   
   return interval;
 };
+
+export const resolveDisaster = (id, resolutionNotes) => {
+  return axios.post(`${API_BASE_URL}/disasters/${id}/resolve/`, {
+    resolution_notes: resolutionNotes
+  });
+};
