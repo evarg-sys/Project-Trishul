@@ -1,6 +1,9 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
+from django.core.management import call_command
+from io import StringIO
 from .models import Disaster
+from .ml.text_priority_parser import parse_incident_text
 
 # Create your tests here.
 
@@ -101,3 +104,29 @@ class BatchPriorityApiTests(TestCase):
         res = self.client.post('/api/priority/batch/', {'incidents': []}, format='json')
         self.assertEqual(res.status_code, 400)
         self.assertIn('error', res.data)
+
+
+class TextPriorityInputTests(TestCase):
+    def test_parse_incident_text_extracts_core_fields(self):
+        text = "Big fire at 55 W Illinois St lots of people hurt need fire truck"
+        parsed = parse_incident_text(text)
+
+        self.assertEqual(parsed['disaster_type'], 'fire')
+        self.assertEqual(parsed['response_type'], 'fire')
+        self.assertIn('55 W Illinois', parsed['location'])
+        self.assertGreater(parsed['severity_score'], 3.0)
+        self.assertGreater(parsed['population_affected'], 100)
+
+    def test_priority_from_text_command_ranks_multiple_inputs(self):
+        out = StringIO()
+        call_command(
+            'priority_from_text',
+            '--text', 'small fire at 1 Main St few people hurt',
+            '--text', 'major fire at 200 Lake Shore Dr lots of people hurt urgent',
+            stdout=out,
+        )
+        output = out.getvalue()
+
+        self.assertIn('Priority Ranking', output)
+        self.assertIn('#1 | priority=', output)
+        self.assertIn('major fire at 200 Lake Shore Dr', output)
