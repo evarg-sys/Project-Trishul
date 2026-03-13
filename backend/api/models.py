@@ -23,6 +23,8 @@ class Disaster(models.Model):
     
     # Status
     status = models.CharField(max_length=20, default='reported')
+    resolution_notes = models.TextField(blank=True, default='')
+    resolved_at = models.DateTimeField(null=True, blank=True)
     reported_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

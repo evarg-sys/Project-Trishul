@@ -7,6 +7,17 @@
 * check planned milestones
 * review next steps
 
+### March 6 Meeting
+Next steps:
+* Eric
+  * Will continue to debug model workflow
+  * Will work on dispatch engine (based on severity score)
+  * Will look into oracle cloud setup
+* Deepikka
+  * Will continue working on app title screen and dashboard features
+* Abhijith
+  * TBD
+    
 ### February 27 Meeting
 Next steps:
 * Eric

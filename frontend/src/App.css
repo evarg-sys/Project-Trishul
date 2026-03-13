@@ -175,3 +175,96 @@ button:hover {
   width: 100% !important;
   filter: grayscale(100%);
 }
+
+/* ── Title Page ──────────────────────────────────────────────── */
+.title-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: black;
+}
+
+.title-page-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 360px;
+}
+
+.title-page-heading {
+  font-family: "Times New Roman", Times, serif;
+  font-size: 1.8rem;
+  text-align: center;
+  color: white;
+  margin: 0 0 10px 0;
+  line-height: 1.4;
+}
+
+.title-card {
+  width: 100%;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.title-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: 6px;
+}
+
+.title-input {
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  width: 100%;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 1rem;
+}
+
+.title-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.title-incident-btn {
+  text-align: center;
+  padding: 20px;
+  cursor: pointer;
+  font-size: 1rem;
+  color: white;
+  transition: background 0.2s ease;
+}
+
+.title-incident-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Back Button — fixed bottom left of main scene ───────────── */
+.back-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9999;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 0.95rem;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.back-btn:hover {
+  background: rgba(0, 0, 0, 0.75);
+  border-color: rgba(255, 255, 255, 0.3);
+}
