@@ -7,6 +7,19 @@
 * check planned milestones
 * review next steps
 
+
+### March 13 Meeting
+* Eric:
+  * will continue integrating models
+  * will add new parsing methods (Spacy)
+  * explore fairness constraints and hidden layers
+* Deepikka
+  * will update frontend inputs to match backend
+* Abhijith
+  * will work on route viewing
+  * "clear incident" button and other placeholder updates
+  * add map visualizations and location info
+
 ### March 6 Meeting
 Next steps:
 * Eric
