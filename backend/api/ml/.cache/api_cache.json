@@ -1,0 +1,23 @@
+{
+  "zipcode::41.9571226:-87.6635844": "60613",
+  "buildings::41.9571226:-87.6635844:700": {
+    "counts": {
+      "residential": 1935,
+      "school": 5,
+      "apartments": 53,
+      "retail": 7,
+      "commercial": 3,
+      "roof": 2,
+      "church": 4,
+      "public": 1,
+      "garage": 16,
+      "detached": 4,
+      "gazebo": 1,
+      "chapel": 1,
+      "shed": 3,
+      "house": 5,
+      "construction": 1
+    },
+    "total": 2041
+  }
+}

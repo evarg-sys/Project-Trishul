@@ -49,7 +49,7 @@ class DisasterRouting:
 
     def find_nearby_fire_stations(self, center_coords, radius_meters=5000, max_results=5):
         tags = {"amenity": "fire_station"}
-        gdf = ox.geometries_from_point(center_coords, tags=tags, dist=radius_meters)
+        gdf = self._features_from_point(center_coords, tags=tags, radius_meters=radius_meters)
         stations = []
         for _, row in gdf.iterrows():
             if row.geometry:
@@ -82,7 +82,7 @@ class DisasterRouting:
 
     def find_nearby_hospitals(self, center_coords, radius_meters=5000, max_results=5):
         tags = {"amenity": "hospital"}
-        gdf = ox.geometries_from_point(center_coords, tags=tags, dist=radius_meters)
+        gdf = self._features_from_point(center_coords, tags=tags, radius_meters=radius_meters)
         hospitals = []
         for _, row in gdf.iterrows():
             if row.geometry:
@@ -110,6 +110,14 @@ class DisasterRouting:
         if routes:
             routes[0]["selected"] = True
         return routes
+
+    def _features_from_point(self, center_coords, tags, radius_meters=5000):
+        """Load nearby map features with compatibility across OSMnx versions."""
+        if hasattr(ox, "features_from_point"):
+            return ox.features_from_point(center_coords, tags=tags, dist=radius_meters)
+        if hasattr(ox, "geometries_from_point"):
+            return ox.geometries_from_point(center_coords, tags=tags, dist=radius_meters)
+        raise RuntimeError("Installed osmnx version does not support point feature queries")
 
     # ---------- VISUALIZATION ----------
 

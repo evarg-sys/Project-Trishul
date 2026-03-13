@@ -286,8 +286,13 @@ class DispatchEngine:
                 "selected_route": selected,
                 "routes": routes,
             }
-        except Exception:
-            return default_time, {"method": "default_routing_failed", "routes": []}
+        except Exception as exc:
+            return default_time, {
+                "method": "default_routing_failed",
+                "routes": [],
+                "error": str(exc),
+                "error_type": type(exc).__name__,
+            }
 
 
 def run_dispatch_engine(
