@@ -10,25 +10,34 @@ const API_BASE_URL = "http://localhost:8000/api";
 
 const RESOURCE_ICONS = {
   "Fire Trucks": "🚒",
-  Ambulances: "🚑",
-  "Police Units": "🚓",
-  Others: "🚧",
+  Ambulances:    "🚑",
+  "Police Units":"🚓",
+  Others:        "🚧",
 };
 
-// Chicago center coordinates and zoom
 const CHICAGO_CENTER = [41.8781, -87.6298];
-const CHICAGO_ZOOM = 10;
+const CHICAGO_ZOOM   = 10;
+
+// Label map for incident detail boxes
+const INCIDENT_DETAIL_LABELS = {
+  severity:    "Severity Score",
+  population:  "Population / Exposure",
+  routing:     "Routing & Travel Time",
+  feasibility: "Feasibility Score",
+  ambulances:  "Ambulances Ready?",
+  weather:     "Weather Constraints?",
+};
 
 export default function App() {
-  // ── Title page state ──────────────────────────────────────────
+  // ── Title page ────────────────────────────────────────────────
   const [showTitlePage, setShowTitlePage] = useState(true);
   const [titleLocation, setTitleLocation] = useState("");
-  const [titleZipCode, setTitleZipCode] = useState("");
+  const [titleZipCode,  setTitleZipCode]  = useState("");
 
-  // ── Existing state (unchanged) ────────────────────────────────
-  const [selected, setSelected] = useState(null);
-  const [view, setView] = useState("country");
-  const [modal, setModal] = useState(null);
+  // ── Core state ────────────────────────────────────────────────
+  const [selected,  setSelected]  = useState(null);
+  const [view,      setView]      = useState("country");
+  const [modal,     setModal]     = useState(null);
   const [resourceModal, setResourceModal] = useState(null);
 
   const [resourceFields, setResourceFields] = useState({
@@ -38,69 +47,50 @@ export default function App() {
     Others:         { total: "", nearestWithin100m: "", estimatedResponseTime: "" },
   });
 
-  const updateResourceField = (resource, field, value) => {
-    setResourceFields(prev => ({
-      ...prev,
-      [resource]: { ...prev[resource], [field]: value },
-    }));
-  };
+  const updateResourceField = (resource, field, value) =>
+    setResourceFields(prev => ({ ...prev, [resource]: { ...prev[resource], [field]: value } }));
 
-  const [saved, setSaved] = useState(false);
-  const [draft, setDraft] = useState({ location: "", description: "", predicted: "" });
+  const [saved,    setSaved]    = useState(false);
+  const [draft,    setDraft]    = useState({ location: "", description: "", predicted: "" });
   const [severityInput, setSeverityInput] = useState("");
   const [severityScore, setSeverityScore] = useState("");
   const [severityNotes, setSeverityNotes] = useState("");
   const [populationData, setPopulationData] = useState({ area: "", buildings: "", type: "", people: "" });
-  const [routingData, setRoutingData] = useState({ station: "", eta: "", traffic: "", blocks: "" });
+  const [routingData,    setRoutingData]    = useState({ station: "", eta: "", traffic: "", blocks: "" });
   const [feasibilityData, setFeasibilityData] = useState("");
-  const [ambulanceData, setAmbulanceData] = useState("");
-  const [weatherData, setWeatherData] = useState("");
-
-  const [activeDisasters, setActiveDisasters] = useState([]);
+  const [ambulanceData,   setAmbulanceData]   = useState("");
+  const [weatherData,     setWeatherData]     = useState("");
+  const [activeDisasters,   setActiveDisasters]   = useState([]);
   const [resolvedDisasters, setResolvedDisasters] = useState([]);
-  const [fireStations, setFireStations] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
+  const [fireStations,      setFireStations]      = useState([]);
+  const [submitting,  setSubmitting]  = useState(false);
   const [submitError, setSubmitError] = useState("");
-
   const [analysisResult, setAnalysisResult] = useState(null);
-  const [analyzing, setAnalyzing] = useState(false);
-
-  const [resolveTarget, setResolveTarget] = useState(null);
+  const [analyzing,      setAnalyzing]      = useState(false);
+  const [resolveTarget,  setResolveTarget]  = useState(null);
   const [resolutionNotes, setResolutionNotes] = useState("");
-  const [resolving, setResolving] = useState(false);
+  const [resolving,       setResolving]       = useState(false);
 
   useEffect(() => {
     if (view === "incidents") fetchActiveDisasters();
-    if (view === "resolved") fetchResolvedDisasters();
+    if (view === "resolved")  fetchResolvedDisasters();
   }, [view]);
 
   useEffect(() => { fetchFireStations(); }, []);
 
   const fetchActiveDisasters = async () => {
-    try {
-      const response = await getActiveDisasters();
-      setActiveDisasters(response.data);
-    } catch (error) {
-      console.error("Failed to fetch active disasters:", error);
-    }
+    try   { const r = await getActiveDisasters();                          setActiveDisasters(r.data); }
+    catch  { console.error("Failed to fetch active disasters"); }
   };
 
   const fetchResolvedDisasters = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/disasters/resolved/`);
-      setResolvedDisasters(response.data);
-    } catch (error) {
-      console.error("Failed to fetch resolved disasters:", error);
-    }
+    try   { const r = await axios.get(`${API_BASE_URL}/disasters/resolved/`); setResolvedDisasters(r.data); }
+    catch  { console.error("Failed to fetch resolved disasters"); }
   };
 
   const fetchFireStations = async () => {
-    try {
-      const response = await getFireStations();
-      setFireStations(response.data);
-    } catch (error) {
-      console.error("Failed to fetch fire stations:", error);
-    }
+    try   { const r = await getFireStations(); setFireStations(r.data); }
+    catch  { console.error("Failed to fetch fire stations"); }
   };
 
   const handleSubmit = async () => {
@@ -111,8 +101,8 @@ export default function App() {
     try {
       const response = await reportDisaster({
         disaster_type: draft.predicted || "fire",
-        address: draft.location,
-        description: draft.description,
+        address:       draft.location,
+        description:   draft.description,
       });
       const disasterId = response.data.disaster_id;
       setAnalyzing(true);
@@ -120,10 +110,7 @@ export default function App() {
       setView("analysis");
       pollDisasterAnalysis(disasterId, (disaster) => {
         setAnalysisResult(disaster);
-        if (disaster.status === "analyzed") {
-          setAnalyzing(false);
-          fetchActiveDisasters();
-        }
+        if (disaster.status === "analyzed") { setAnalyzing(false); fetchActiveDisasters(); }
       });
     } catch (error) {
       console.error("Failed to report incident:", error);
@@ -141,70 +128,47 @@ export default function App() {
       setResolveTarget(null);
       setResolutionNotes("");
       fetchActiveDisasters();
-    } catch (error) {
-      console.error("Failed to resolve incident:", error);
-    } finally {
-      setResolving(false);
-    }
+    } catch { console.error("Failed to resolve incident"); }
+    finally  { setResolving(false); }
   };
 
-  const resetDraft = () => {
-    setDraft({ location: "", description: "", predicted: "" });
-    setSubmitError("");
-  };
-
-  const updateDraft = (field, value) => {
-    setDraft({ ...draft, [field]: value });
-    setSaved(false);
-  };
-
-  const onEachCountry = (feature, layer) => {
+  const resetDraft = () => { setDraft({ location: "", description: "", predicted: "" }); setSubmitError(""); };
+  const updateDraft = (field, value) => { setDraft({ ...draft, [field]: value }); setSaved(false); };
+  const onEachCountry = (feature, layer) =>
     layer.on({ click: () => { setSelected(feature.properties.name); setView("country"); } });
-  };
 
   // ── TITLE PAGE ────────────────────────────────────────────────
   if (showTitlePage) {
     return (
       <div className="title-page">
         <div className="title-page-inner">
-          <h1 className="title-page-heading">Disaster Response<br />Planning System</h1>
+          <h1 className="title-page-heading">
+            Disaster Response<br />Planning System
+          </h1>
 
           <div className="title-card glass">
             <label className="title-label">Location</label>
-            <input
-              className="title-input"
-              type="text"
-              placeholder="Enter location"
-              value={titleLocation}
-              onChange={e => setTitleLocation(e.target.value)}
-            />
-            <label className="title-label" style={{ marginTop: "12px" }}>Zip Code</label>
-            <input
-              className="title-input"
-              type="text"
-              placeholder="Enter zip code"
-              value={titleZipCode}
-              onChange={e => setTitleZipCode(e.target.value)}
-            />
+            <input className="title-input" type="text" placeholder="Enter location"
+              value={titleLocation} onChange={e => setTitleLocation(e.target.value)} />
+            <label className="title-label">Zip Code</label>
+            <input className="title-input" type="text" placeholder="Enter zip code"
+              value={titleZipCode} onChange={e => setTitleZipCode(e.target.value)} />
           </div>
 
-          <div
-            className="title-card glass title-incident-btn"
-            onClick={() => setShowTitlePage(false)}
-          >
-            view full incident list
+          <div className="title-card glass title-incident-btn" onClick={() => setShowTitlePage(false)}>
+            View Full Incident List →
           </div>
         </div>
       </div>
     );
   }
 
-  // ── MAIN APP (unchanged layout) ───────────────────────────────
+  // ── MAIN APP ──────────────────────────────────────────────────
   return (
     <div className="app-root">
-      {/* BACK BUTTON — always visible, bottom left */}
       <button className="back-btn" onClick={() => setShowTitlePage(true)}>← Back</button>
-      {/* MAP — centered on Chicago */}
+
+      {/* MAP */}
       <div className="map-panel glass">
         <MapContainer center={CHICAGO_CENTER} zoom={CHICAGO_ZOOM} style={{ height: "100%", width: "100%" }}>
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
@@ -227,102 +191,134 @@ export default function App() {
         </div>
 
         <div className="info-panel glass">
-          {view === "country" && (selected ? <><h2>{selected}</h2><p>Description will go here later</p></> : <p>Click a country</p>)}
+
+          {view === "country" && (
+            <div key="country" className="view-content">
+              {selected
+                ? <><h2>{selected}</h2><p style={{ color: "var(--text-dim)", fontSize: "0.82rem" }}>No active incidents for this region.</p></>
+                : <p style={{ color: "var(--text-dim)", fontSize: "0.82rem" }}>Select a region on the map to view details.</p>
+              }
+            </div>
+          )}
 
           {view === "incidents" && (
-            <>
+            <div key="incidents" className="view-content">
               <h2>Active Incidents</h2>
-              {activeDisasters.length === 0 ? (
-                <p style={{ color: "#aaa", marginTop: "10px" }}>No active incidents reported.</p>
-              ) : (
-                activeDisasters.map((disaster) => (
-                  <div key={disaster.id} className="incident-box" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span onClick={() => setModal("severity")} style={{ cursor: "pointer", flex: 1 }}>
-                      {disaster.disaster_type.toUpperCase()} — {disaster.address}
-                      {disaster.priority_score != null && (
-                        <span style={{ float: "right", fontWeight: "bold", marginRight: "8px" }}>
-                          P: {disaster.priority_score.toFixed(1)}
+
+              {activeDisasters.length === 0
+                ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginTop: "8px" }}>No active incidents reported.</p>
+                : activeDisasters.map((d, i) => (
+                  <div key={d.id} className="incident-box"
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", animationDelay: `${i * 0.06}s` }}>
+                    <span onClick={() => setModal("severity")} style={{ cursor: "pointer", flex: 1, fontSize: "0.82rem" }}>
+                      <span style={{ color: "var(--amber)", fontWeight: "bold" }}>{d.disaster_type.toUpperCase()}</span>
+                      {" — "}{d.address}
+                      {d.priority_score != null && (
+                        <span style={{ marginLeft: "8px", color: "var(--amber-dim)", fontSize: "0.75rem" }}>
+                          P:{d.priority_score.toFixed(1)}
                         </span>
                       )}
                     </span>
-                    <button
-                      onClick={() => { setResolveTarget(disaster); setResolutionNotes(""); }}
-                      style={{ marginLeft: "10px", background: "#2a6e2a", color: "white", border: "none", borderRadius: "6px", padding: "4px 10px", cursor: "pointer", fontSize: "12px" }}
-                    >
+                    <button className="resolve-btn"
+                      onClick={() => { setResolveTarget(d); setResolutionNotes(""); }}>
                       Resolve
                     </button>
                   </div>
                 ))
-              )}
-              <div style={{ marginTop: "15px" }}>
-                <div className="incident-box" onClick={() => setModal("severity")}>Severity Score</div>
-                <div className="incident-box" onClick={() => setModal("population")}>Population / Exposure</div>
-                <div className="incident-box" onClick={() => setModal("routing")}>Routing & Travel Time</div>
-                <div className="incident-box" onClick={() => setModal("feasibility")}>Feasibility Score</div>
-                <div className="incident-box" onClick={() => setModal("ambulances")}>Ambulances Ready?</div>
-                <div className="incident-box" onClick={() => setModal("weather")}>Weather Constraints?</div>
+              }
+
+              <div style={{ marginTop: "14px", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
+                <p style={{ color: "var(--text-dim)", fontSize: "0.7rem", letterSpacing: "0.1em",
+                  textTransform: "uppercase", marginBottom: "6px" }}>Incident Details</p>
+                {Object.entries(INCIDENT_DETAIL_LABELS).map(([key, label], i) => (
+                  <div key={key} className="incident-box" onClick={() => setModal(key)}
+                    style={{ animationDelay: `${(activeDisasters.length + i) * 0.06}s` }}>
+                    {label}
+                  </div>
+                ))}
               </div>
-            </>
+            </div>
           )}
 
           {view === "resolved" && (
-            <>
+            <div key="resolved" className="view-content">
               <h2>Resolved Incidents</h2>
-              {resolvedDisasters.length === 0 ? (
-                <p style={{ color: "#aaa", marginTop: "10px" }}>No resolved incidents yet.</p>
-              ) : (
-                resolvedDisasters.map((disaster) => (
-                  <div key={disaster.id} className="incident-box" style={{ borderLeft: "3px solid #2a6e2a" }}>
-                    <strong>{disaster.disaster_type.toUpperCase()}</strong> — {disaster.address}
+              {resolvedDisasters.length === 0
+                ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginTop: "8px" }}>No resolved incidents yet.</p>
+                : resolvedDisasters.map((d, i) => (
+                  <div key={d.id} className="incident-box"
+                    style={{ borderLeftColor: "var(--green)", animationDelay: `${i * 0.06}s` }}>
+                    <strong style={{ color: "var(--green)" }}>{d.disaster_type.toUpperCase()}</strong>
+                    {" — "}{d.address}
                     <br />
-                    <small style={{ color: "#aaa" }}>
-                      Resolved: {disaster.resolved_at ? new Date(disaster.resolved_at).toLocaleString() : "—"}
+                    <small style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
+                      Resolved: {d.resolved_at ? new Date(d.resolved_at).toLocaleString() : "—"}
                     </small>
-                    {disaster.resolution_notes && (
-                      <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#ccc" }}>
-                        📝 {disaster.resolution_notes}
+                    {d.resolution_notes && (
+                      <p style={{ margin: "4px 0 0", fontSize: "0.78rem", color: "var(--text-dim)" }}>
+                        ↳ {d.resolution_notes}
                       </p>
                     )}
                   </div>
                 ))
-              )}
-            </>
+              }
+            </div>
           )}
 
           {view === "new" && (
-            <div className="form-box">
+            <div key="new" className="view-content">
               <h2>New Incident</h2>
               <label>Location / Area</label>
-              <input value={draft.location} onChange={e => updateDraft("location", e.target.value)} />
+              <input value={draft.location} onChange={e => updateDraft("location", e.target.value)}
+                placeholder="e.g. 123 W Michigan Ave, Chicago" />
               <label>Description</label>
-              <textarea value={draft.description} onChange={e => updateDraft("description", e.target.value)} />
+              <textarea value={draft.description} onChange={e => updateDraft("description", e.target.value)}
+                placeholder="Describe the incident…" rows={3} style={{ marginTop: "0", resize: "vertical" }} />
               <label>Predicted Type</label>
-              <input value={draft.predicted} onChange={e => updateDraft("predicted", e.target.value)} placeholder="fire / flood / earthquake" />
-              {submitError && <p style={{ color: "red", marginTop: "8px" }}>{submitError}</p>}
+              <input value={draft.predicted} onChange={e => updateDraft("predicted", e.target.value)}
+                placeholder="fire / flood / earthquake" />
+              {submitError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{submitError}</p>}
               <div className="form-buttons">
-                <button onClick={handleSubmit} disabled={submitting}>{submitting ? "Submitting..." : "Submit"}</button>
+                <button onClick={handleSubmit} disabled={submitting}>
+                  {submitting ? <><span className="submitting-indicator" />Submitting…</> : "Submit"}
+                </button>
                 <button onClick={() => { if (!saved) resetDraft(); setSaved(false); setView("country"); }}>Close</button>
-                <button onClick={() => { setSaved(true); alert("Draft saved successfully!"); }}>Save Draft</button>
+                <button onClick={() => { setSaved(true); alert("Draft saved."); }}>Save Draft</button>
               </div>
             </div>
           )}
 
           {view === "analysis" && (
-            <div className="form-box">
+            <div key="analysis" className="view-content">
               <h2>Incident Analysis</h2>
-              {analyzing && <p style={{ color: "#aaa", marginTop: "10px" }}>Analyzing incident... please wait</p>}
+              {analyzing && (
+                <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginTop: "8px" }}>
+                  <span className="submitting-indicator" />Analyzing incident…
+                </p>
+              )}
               {analysisResult && (
                 <div>
-                  <div className="row"><label>Type:</label><input readOnly value={analysisResult.disaster_type || ""} /></div>
-                  <div className="row"><label>Address:</label><input readOnly value={analysisResult.address || ""} /></div>
-                  <div className="row"><label>Confidence Score:</label><input readOnly value={analysisResult.confidence_score ? `${analysisResult.confidence_score.toFixed(1)}%` : "Analyzing..."} /></div>
-                  <div className="row"><label>Severity Score:</label><input readOnly value={analysisResult.severity_score || "Analyzing..."} /></div>
-                  <div className="row"><label>Population Affected:</label><input readOnly value={analysisResult.population_affected ? analysisResult.population_affected.toLocaleString() : "Analyzing..."} /></div>
-                  <div className="row"><label>Latitude:</label><input readOnly value={analysisResult.latitude || "Analyzing..."} /></div>
-                  <div className="row"><label>Longitude:</label><input readOnly value={analysisResult.longitude || "Analyzing..."} /></div>
-                  <div className="row"><label>Status:</label><input readOnly value={analysisResult.status || ""} /></div>
-                  <div className="row"><label>Priority Score:</label><input readOnly value={analysisResult.priority_score != null ? analysisResult.priority_score.toFixed(1) : ""} /></div>
-                  {analysisResult.status === "analyzed" && <p style={{ color: "green", marginTop: "10px" }}>✓ Analysis complete</p>}
+                  {[
+                    ["Type",               analysisResult.disaster_type],
+                    ["Address",            analysisResult.address],
+                    ["Confidence Score",   analysisResult.confidence_score ? `${analysisResult.confidence_score.toFixed(1)}%` : "Analyzing…"],
+                    ["Severity Score",     analysisResult.severity_score   || "Analyzing…"],
+                    ["Population Affected",analysisResult.population_affected ? analysisResult.population_affected.toLocaleString() : "Analyzing…"],
+                    ["Latitude",           analysisResult.latitude   || "Analyzing…"],
+                    ["Longitude",          analysisResult.longitude  || "Analyzing…"],
+                    ["Status",             analysisResult.status],
+                    ["Priority Score",     analysisResult.priority_score != null ? analysisResult.priority_score.toFixed(1) : ""],
+                  ].map(([lbl, val]) => (
+                    <div className="row" key={lbl}>
+                      <label style={{ margin: 0 }}>{lbl}</label>
+                      <input readOnly value={val || ""} />
+                    </div>
+                  ))}
+                  {analysisResult.status === "analyzed" && (
+                    <p style={{ color: "var(--green)", fontSize: "0.78rem", marginTop: "10px" }}>
+                      ✓ Analysis complete
+                    </p>
+                  )}
                 </div>
               )}
               <div className="form-buttons">
@@ -333,36 +329,57 @@ export default function App() {
           )}
 
           {view === "analytics" && (
-            <div className="analytics-box">
+            <div key="analytics" className="view-content">
               <h2>Analytics</h2>
-              <div className="row"><label>Average Response Time:</label><input /></div>
-              <div className="row"><label>AI Accuracy:</label><input /></div>
-              <div className="row"><label>Active Incidents:</label><input value={activeDisasters.length} readOnly /></div>
-              <div className="row"><label>Average Severity:</label><input /></div>
+              {[
+                ["Average Response Time", ""],
+                ["AI Accuracy",           ""],
+                ["Active Incidents",      activeDisasters.length],
+                ["Average Severity",      ""],
+              ].map(([lbl, val]) => (
+                <div className="row" key={lbl}>
+                  <label style={{ margin: 0 }}>{lbl}</label>
+                  <input value={val} readOnly={lbl === "Active Incidents"} onChange={() => {}} />
+                </div>
+              ))}
               <div className="resources-subbox">
-                <h3>Resources</h3>
-                <div className="row"><label>Fire Truck Utilization:</label><input /></div>
-                <div className="row"><label>Ambulance Utilization:</label><input /></div>
-                <div className="row"><label>Police Units Utilization:</label><input /></div>
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.85rem",
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: "var(--amber-dim)", marginBottom: "12px" }}>Resource Utilization</h3>
+                {["Fire Truck","Ambulance","Police Units"].map(r => (
+                  <div className="row" key={r}>
+                    <label style={{ margin: 0 }}>{r} Utilization</label>
+                    <input />
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {view === "resources" && (
-            <div className="resources-clean">
+            <div key="resources" className="view-content">
               <h2>Resources</h2>
               <div className="resource-top-buttons">
-                {["Fire Trucks", "Ambulances", "Police Units", "Others"].map((name) => (
-                  <button key={name} onClick={() => setResourceModal(name)}>{RESOURCE_ICONS[name]} {name}</button>
+                {Object.entries(RESOURCE_ICONS).map(([name, icon]) => (
+                  <button key={name} onClick={() => setResourceModal(name)}>{icon} {name}</button>
                 ))}
               </div>
               <div className="glass resource-card">
-                <h3>All Resources</h3>
-                <div className="resource-row"><label>Fire Trucks Availability</label><input value={fireStations.reduce((sum, s) => sum + s.available_trucks, 0)} readOnly /></div>
-                <div className="resource-row"><label>Ambulance Availability</label><input /></div>
-                <div className="resource-row"><label>Police Units Availability</label><input /></div>
-                <div className="resource-row"><label>Other Availability</label><input /></div>
-                <div className="resource-row"><label>Total Availability</label><input /></div>
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.85rem",
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: "var(--amber-dim)", marginBottom: "12px" }}>All Resources</h3>
+                {[
+                  ["Fire Trucks Availability",  fireStations.reduce((s, x) => s + x.available_trucks, 0)],
+                  ["Ambulance Availability",    ""],
+                  ["Police Units Availability", ""],
+                  ["Other Availability",        ""],
+                  ["Total Availability",        ""],
+                ].map(([lbl, val]) => (
+                  <div className="resource-row" key={lbl}>
+                    <label>{lbl}</label>
+                    <input value={val} readOnly={lbl === "Fire Trucks Availability"} onChange={() => {}} />
+                  </div>
+                ))}
                 <div className="resource-actions">
                   <button>Assign</button>
                   <button>Reserve</button>
@@ -371,36 +388,35 @@ export default function App() {
               </div>
             </div>
           )}
+
         </div>
       </div>
 
-      {/* RESOLVE MODAL */}
+      {/* ── RESOLVE MODAL ──────────────────────────────────────── */}
       {resolveTarget && (
         <div className="modal-overlay">
           <div className="modal glass">
             <h2>Resolve Incident</h2>
-            <p style={{ color: "#ccc", marginBottom: "12px" }}>
-              <strong>{resolveTarget.disaster_type.toUpperCase()}</strong> — {resolveTarget.address}
+            <p style={{ color: "var(--text-dim)", fontSize: "0.82rem", marginBottom: "14px" }}>
+              <span style={{ color: "var(--amber)" }}>{resolveTarget.disaster_type.toUpperCase()}</span>
+              {" — "}{resolveTarget.address}
             </p>
             <label>Resolution Notes</label>
-            <textarea
-              value={resolutionNotes}
-              onChange={e => setResolutionNotes(e.target.value)}
+            <textarea value={resolutionNotes} onChange={e => setResolutionNotes(e.target.value)}
               placeholder="e.g. Fire extinguished by Engine 42, no casualties"
-              rows={4}
-              style={{ width: "100%", marginTop: "6px", padding: "8px", borderRadius: "6px", background: "#1a1a1a", color: "white", border: "1px solid #444" }}
-            />
-            <div className="modal-buttons" style={{ marginTop: "12px" }}>
+              rows={4} style={{ resize: "vertical" }} />
+            <div className="modal-buttons">
               <button onClick={() => { setResolveTarget(null); setResolutionNotes(""); }}>Cancel</button>
-              <button onClick={handleResolve} disabled={resolving} style={{ background: "#2a6e2a", color: "white" }}>
-                {resolving ? "Resolving..." : "Confirm Resolved"}
+              <button onClick={handleResolve} disabled={resolving}
+                style={{ background: "rgba(62,207,114,0.1)", borderColor: "rgba(62,207,114,0.3)", color: "var(--green)" }}>
+                {resolving ? "Resolving…" : "Confirm Resolved"}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* RESOURCE DETAIL POPUP */}
+      {/* ── RESOURCE DETAIL POPUP ──────────────────────────────── */}
       {resourceModal && (
         <div className="modal-overlay" onClick={() => setResourceModal(null)}>
           <div className="modal glass resource-popup" onClick={e => e.stopPropagation()}>
@@ -408,18 +424,17 @@ export default function App() {
               <span className="resource-popup-icon">{RESOURCE_ICONS[resourceModal]}</span>
               <h2>{resourceModal}</h2>
             </div>
-            <div className="resource-detail-row">
-              <label>Total Availability</label>
-              <input value={resourceFields[resourceModal].total} onChange={e => updateResourceField(resourceModal, "total", e.target.value)} />
-            </div>
-            <div className="resource-detail-row">
-              <label>Nearest Within 100m</label>
-              <input value={resourceFields[resourceModal].nearestWithin100m} onChange={e => updateResourceField(resourceModal, "nearestWithin100m", e.target.value)} />
-            </div>
-            <div className="resource-detail-row">
-              <label>Estimated Response Time</label>
-              <input value={resourceFields[resourceModal].estimatedResponseTime} onChange={e => updateResourceField(resourceModal, "estimatedResponseTime", e.target.value)} />
-            </div>
+            {[
+              ["Total Availability",      "total"],
+              ["Nearest Within 100m",     "nearestWithin100m"],
+              ["Estimated Response Time", "estimatedResponseTime"],
+            ].map(([lbl, field]) => (
+              <div className="resource-detail-row" key={field}>
+                <label>{lbl}</label>
+                <input value={resourceFields[resourceModal][field]}
+                  onChange={e => updateResourceField(resourceModal, field, e.target.value)} />
+              </div>
+            ))}
             <div className="modal-buttons">
               <button onClick={() => setResourceModal(null)}>Close</button>
               <button onClick={() => { alert("Saved!"); setResourceModal(null); }}>Save</button>
@@ -428,73 +443,83 @@ export default function App() {
         </div>
       )}
 
-      {/* EXISTING MODALS */}
+      {/* ── OTHER MODALS ───────────────────────────────────────── */}
       {modal && (
         <div className="modal-overlay">
           <div className="modal glass">
+
             {modal === "incidentList" && (
-              <div>
+              <>
                 <h2>Full Incident List</h2>
-                {activeDisasters.length === 0 ? (
-                  <p style={{ color: "#aaa", marginTop: "10px" }}>No incidents reported yet.</p>
-                ) : (
-                  activeDisasters.map((disaster) => (
-                    <div key={disaster.id} className="incident-box">
-                      <strong>{disaster.disaster_type.toUpperCase()}</strong> — {disaster.address}
-                      <br />
-                      <small>Status: {disaster.status} | Reported: {new Date(disaster.reported_at).toLocaleString()}</small>
+                {activeDisasters.length === 0
+                  ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>No incidents reported yet.</p>
+                  : activeDisasters.map((d, i) => (
+                    <div key={d.id} className="incident-box" style={{ animationDelay: `${i * 0.06}s` }}>
+                      <strong style={{ color: "var(--amber)" }}>{d.disaster_type.toUpperCase()}</strong>
+                      {" — "}{d.address}<br />
+                      <small style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
+                        Status: {d.status} · {new Date(d.reported_at).toLocaleString()}
+                      </small>
                     </div>
                   ))
-                )}
-              </div>
+                }
+              </>
             )}
+
             {modal === "severity" && (
-              <div className="form-box">
+              <>
                 <h2>Severity Scaling</h2>
-                <label>Input:</label>
+                <label>Input</label>
                 <input value={severityInput} onChange={e => setSeverityInput(e.target.value)} />
-                <label>Severity Score:</label>
+                <label>Severity Score</label>
                 <input value={severityScore} onChange={e => setSeverityScore(e.target.value)} />
-                <label>Notes (Keywords Found):</label>
-                <textarea value={severityNotes} onChange={e => setSeverityNotes(e.target.value)} />
-              </div>
+                <label>Notes — Keywords Found</label>
+                <textarea value={severityNotes} onChange={e => setSeverityNotes(e.target.value)} rows={3} style={{ resize: "vertical" }} />
+              </>
             )}
+
             {modal === "population" && (
-              <div className="population-box">
+              <>
                 <h2>Population / Exposure</h2>
-                <div className="row"><label>Area Size:</label><input value={populationData.area} onChange={e => setPopulationData({ ...populationData, area: e.target.value })} /></div>
-                <div className="row"><label>Buildings in Area:</label><input value={populationData.buildings} onChange={e => setPopulationData({ ...populationData, buildings: e.target.value })} /></div>
-                <div className="row"><label>Dominant Building:</label><input value={populationData.type} onChange={e => setPopulationData({ ...populationData, type: e.target.value })} /></div>
-                <div className="row"><label>Estimated People:</label><input value={populationData.people} onChange={e => setPopulationData({ ...populationData, people: e.target.value })} /></div>
-              </div>
+                {[["Area Size","area"],["Buildings in Area","buildings"],["Dominant Building","type"],["Estimated People","people"]].map(([lbl,k]) => (
+                  <div className="row" key={k}>
+                    <label style={{ margin: 0 }}>{lbl}</label>
+                    <input value={populationData[k]} onChange={e => setPopulationData({ ...populationData, [k]: e.target.value })} />
+                  </div>
+                ))}
+              </>
             )}
+
             {modal === "routing" && (
-              <div className="routing-box">
-                <h2>Routing and Travel Time</h2>
-                <div className="row"><label>Nearest Station:</label><input value={routingData.station} onChange={e => setRoutingData({ ...routingData, station: e.target.value })} /></div>
-                <div className="row"><label>ETA (current):</label><input value={routingData.eta} onChange={e => setRoutingData({ ...routingData, eta: e.target.value })} /></div>
-                <div className="row"><label>Traffic:</label><input value={routingData.traffic} onChange={e => setRoutingData({ ...routingData, traffic: e.target.value })} /></div>
-                <div className="row"><label>Closures/Blocks:</label><input value={routingData.blocks} onChange={e => setRoutingData({ ...routingData, blocks: e.target.value })} /></div>
-              </div>
+              <>
+                <h2>Routing & Travel Time</h2>
+                {[["Nearest Station","station"],["ETA (Current)","eta"],["Traffic","traffic"],["Closures / Blocks","blocks"]].map(([lbl,k]) => (
+                  <div className="row" key={k}>
+                    <label style={{ margin: 0 }}>{lbl}</label>
+                    <input value={routingData[k]} onChange={e => setRoutingData({ ...routingData, [k]: e.target.value })} />
+                  </div>
+                ))}
+              </>
             )}
+
             {modal === "feasibility" && (
-              <div className="form-box">
-                <h2>Feasibility Score</h2>
-                <input value={feasibilityData} onChange={e => setFeasibilityData(e.target.value)} placeholder="Feasibility score" />
-              </div>
+              <><h2>Feasibility Score</h2>
+              <label>Score</label>
+              <input value={feasibilityData} onChange={e => setFeasibilityData(e.target.value)} placeholder="0–100" /></>
             )}
+
             {modal === "ambulances" && (
-              <div className="form-box">
-                <h2>Ambulances Ready?</h2>
-                <input value={ambulanceData} onChange={e => setAmbulanceData(e.target.value)} placeholder="Ambulances ready?" />
-              </div>
+              <><h2>Ambulances Ready?</h2>
+              <label>Status</label>
+              <input value={ambulanceData} onChange={e => setAmbulanceData(e.target.value)} placeholder="e.g. 4 available" /></>
             )}
+
             {modal === "weather" && (
-              <div className="form-box">
-                <h2>Weather Constraints</h2>
-                <input value={weatherData} onChange={e => setWeatherData(e.target.value)} placeholder="Weather constraints" />
-              </div>
+              <><h2>Weather Constraints</h2>
+              <label>Conditions</label>
+              <input value={weatherData} onChange={e => setWeatherData(e.target.value)} placeholder="e.g. 25 mph wind, light rain" /></>
             )}
+
             <div className="modal-buttons">
               <button onClick={() => setModal(null)}>Close</button>
               <button onClick={() => { alert("Saved!"); setModal(null); }}>Save</button>
