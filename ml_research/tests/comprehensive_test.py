@@ -2,7 +2,7 @@
 """Comprehensive test of all population model fixes"""
 import sys
 from pathlib import Path
-
+C:\Users\ericg\AppData\Local\Python\pythoncore-3.14-64\python.exe .\backend\manage.py priority_from_text --text "small fire at 410 s morgan st" --text "big fire at 55 n wacker drive few people hurt" --text "earthquake lots of people hurt at 945 W harrison"
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'population'))
 
