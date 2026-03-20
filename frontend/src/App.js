@@ -18,7 +18,6 @@ const RESOURCE_ICONS = {
 const CHICAGO_CENTER = [41.8781, -87.6298];
 const CHICAGO_ZOOM   = 10;
 
-// Label map for incident detail boxes
 const INCIDENT_DETAIL_LABELS = {
   severity:    "Severity Score",
   population:  "Population / Exposure",
@@ -28,18 +27,53 @@ const INCIDENT_DETAIL_LABELS = {
   weather:     "Weather Constraints?",
 };
 
+// ── Title Page Option Configs ──────────────────────────────────
+const TITLE_OPTIONS = [
+  {
+    id: "loc-desc",
+    label: "Location + Description",
+    fields: [
+      { key: "location",    label: "Location",    placeholder: "e.g. 123 W Michigan Ave, Chicago", type: "input" },
+      { key: "description", label: "Description", placeholder: "Describe the incident…",            type: "textarea" },
+    ],
+  },
+  {
+    id: "parsed",
+    label: "Parsed Text",
+    fields: [
+      { key: "parsedText", label: "Raw Text Input", placeholder: "Paste dispatch log, report, or message here…", type: "textarea" },
+    ],
+  },
+  {
+    id: "loc-desc-coords",
+    label: "Location + Description + Coordinates",
+    fields: [
+      { key: "location",    label: "Location",    placeholder: "e.g. 123 W Michigan Ave, Chicago", type: "input"    },
+      { key: "description", label: "Description", placeholder: "Describe the incident…",            type: "textarea" },
+      { key: "latitude",    label: "Latitude",    placeholder: "e.g. 41.8781",                      type: "input"    },
+      { key: "longitude",   label: "Longitude",   placeholder: "e.g. -87.6298",                     type: "input"    },
+    ],
+  },
+];
+
 export default function App() {
   // ── Title page ────────────────────────────────────────────────
-  const [showTitlePage, setShowTitlePage] = useState(true);
-  const [titleLocation, setTitleLocation] = useState("");
-  const [titleZipCode,  setTitleZipCode]  = useState("");
+  const [showTitlePage,   setShowTitlePage]   = useState(true);
+  const [selectedOption,  setSelectedOption]  = useState(null); // "loc-desc" | "parsed" | "loc-desc-coords"
+  const [titleFields,     setTitleFields]     = useState({
+    location: "", description: "", parsedText: "", latitude: "", longitude: "",
+  });
+
+  const updateTitleField = (key, val) =>
+    setTitleFields(prev => ({ ...prev, [key]: val }));
+
+  const handleTitleEnter = () => setShowTitlePage(false);
 
   // ── Core state ────────────────────────────────────────────────
   const [selected,  setSelected]  = useState(null);
   const [view,      setView]      = useState("country");
   const [modal,     setModal]     = useState(null);
   const [resourceModal, setResourceModal] = useState(null);
-
   const [resourceFields, setResourceFields] = useState({
     "Fire Trucks":  { total: "", nearestWithin100m: "", estimatedResponseTime: "" },
     Ambulances:     { total: "", nearestWithin100m: "", estimatedResponseTime: "" },
@@ -79,7 +113,7 @@ export default function App() {
   useEffect(() => { fetchFireStations(); }, []);
 
   const fetchActiveDisasters = async () => {
-    try   { const r = await getActiveDisasters();                          setActiveDisasters(r.data); }
+    try   { const r = await getActiveDisasters(); setActiveDisasters(r.data); }
     catch  { console.error("Failed to fetch active disasters"); }
   };
 
@@ -139,6 +173,8 @@ export default function App() {
 
   // ── TITLE PAGE ────────────────────────────────────────────────
   if (showTitlePage) {
+    const activeOption = TITLE_OPTIONS.find(o => o.id === selectedOption);
+
     return (
       <div className="title-page">
         <div className="title-page-inner">
@@ -146,18 +182,69 @@ export default function App() {
             Disaster Response<br />Planning System
           </h1>
 
-          <div className="title-card glass">
-            <label className="title-label">Location</label>
-            <input className="title-input" type="text" placeholder="Enter location"
-              value={titleLocation} onChange={e => setTitleLocation(e.target.value)} />
-            <label className="title-label">Zip Code</label>
-            <input className="title-input" type="text" placeholder="Enter zip code"
-              value={titleZipCode} onChange={e => setTitleZipCode(e.target.value)} />
-          </div>
+          {/* Option selector cards */}
+          {!selectedOption && (
+            <div className="title-option-grid">
+              {TITLE_OPTIONS.map((opt, i) => (
+                <button
+                  key={opt.id}
+                  className="title-option-card glass"
+                  style={{ animationDelay: `${0.1 + i * 0.1}s` }}
+                  onClick={() => setSelectedOption(opt.id)}
+                >
+                  <span className="title-option-label">{opt.label}</span>
+                </button>
+              ))}
+              <div
+                className="title-card glass title-incident-btn"
+                style={{ animationDelay: "0.4s", animation: "fadeSlideIn 0.4s ease 0.4s forwards", opacity: 0 }}
+                onClick={handleTitleEnter}
+              >
+                View Full Incident List →
+              </div>
+            </div>
+          )}
 
-          <div className="title-card glass title-incident-btn" onClick={() => setShowTitlePage(false)}>
-            View Full Incident List →
-          </div>
+          {/* Selected option — input fields */}
+          {selectedOption && activeOption && (
+            <div className="title-card glass" style={{ width: "100%" }}>
+              <div className="title-option-back-row">
+                <button className="title-back-inline" onClick={() => setSelectedOption(null)}>
+                  ← Back
+                </button>
+              </div>
+
+              <p className="title-option-selected-label">{activeOption.label}</p>
+
+              {activeOption.fields.map(f => (
+                <div key={f.key}>
+                  <label className="title-label">{f.label}</label>
+                  {f.type === "textarea" ? (
+                    <textarea
+                      className="title-input"
+                      placeholder={f.placeholder}
+                      rows={3}
+                      style={{ resize: "vertical" }}
+                      value={titleFields[f.key]}
+                      onChange={e => updateTitleField(f.key, e.target.value)}
+                    />
+                  ) : (
+                    <input
+                      className="title-input"
+                      type="text"
+                      placeholder={f.placeholder}
+                      value={titleFields[f.key]}
+                      onChange={e => updateTitleField(f.key, e.target.value)}
+                    />
+                  )}
+                </div>
+              ))}
+
+              <button className="title-enter-btn" onClick={handleTitleEnter}>
+                Enter System →
+              </button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -191,7 +278,6 @@ export default function App() {
         </div>
 
         <div className="info-panel glass">
-
           {view === "country" && (
             <div key="country" className="view-content">
               {selected
@@ -204,7 +290,6 @@ export default function App() {
           {view === "incidents" && (
             <div key="incidents" className="view-content">
               <h2>Active Incidents</h2>
-
               {activeDisasters.length === 0
                 ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginTop: "8px" }}>No active incidents reported.</p>
                 : activeDisasters.map((d, i) => (
@@ -226,7 +311,6 @@ export default function App() {
                   </div>
                 ))
               }
-
               <div style={{ marginTop: "14px", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
                 <p style={{ color: "var(--text-dim)", fontSize: "0.7rem", letterSpacing: "0.1em",
                   textTransform: "uppercase", marginBottom: "6px" }}>Incident Details</p>
@@ -249,8 +333,7 @@ export default function App() {
                   <div key={d.id} className="incident-box"
                     style={{ borderLeftColor: "var(--green)", animationDelay: `${i * 0.06}s` }}>
                     <strong style={{ color: "var(--green)" }}>{d.disaster_type.toUpperCase()}</strong>
-                    {" — "}{d.address}
-                    <br />
+                    {" — "}{d.address}<br />
                     <small style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
                       Resolved: {d.resolved_at ? new Date(d.resolved_at).toLocaleString() : "—"}
                     </small>
@@ -299,15 +382,15 @@ export default function App() {
               {analysisResult && (
                 <div>
                   {[
-                    ["Type",               analysisResult.disaster_type],
-                    ["Address",            analysisResult.address],
-                    ["Confidence Score",   analysisResult.confidence_score ? `${analysisResult.confidence_score.toFixed(1)}%` : "Analyzing…"],
-                    ["Severity Score",     analysisResult.severity_score   || "Analyzing…"],
-                    ["Population Affected",analysisResult.population_affected ? analysisResult.population_affected.toLocaleString() : "Analyzing…"],
-                    ["Latitude",           analysisResult.latitude   || "Analyzing…"],
-                    ["Longitude",          analysisResult.longitude  || "Analyzing…"],
-                    ["Status",             analysisResult.status],
-                    ["Priority Score",     analysisResult.priority_score != null ? analysisResult.priority_score.toFixed(1) : ""],
+                    ["Type",                analysisResult.disaster_type],
+                    ["Address",             analysisResult.address],
+                    ["Confidence Score",    analysisResult.confidence_score ? `${analysisResult.confidence_score.toFixed(1)}%` : "Analyzing…"],
+                    ["Severity Score",      analysisResult.severity_score   || "Analyzing…"],
+                    ["Population Affected", analysisResult.population_affected ? analysisResult.population_affected.toLocaleString() : "Analyzing…"],
+                    ["Latitude",            analysisResult.latitude   || "Analyzing…"],
+                    ["Longitude",           analysisResult.longitude  || "Analyzing…"],
+                    ["Status",              analysisResult.status],
+                    ["Priority Score",      analysisResult.priority_score != null ? analysisResult.priority_score.toFixed(1) : ""],
                   ].map(([lbl, val]) => (
                     <div className="row" key={lbl}>
                       <label style={{ margin: 0 }}>{lbl}</label>
@@ -388,7 +471,6 @@ export default function App() {
               </div>
             </div>
           )}
-
         </div>
       </div>
 
@@ -447,7 +529,6 @@ export default function App() {
       {modal && (
         <div className="modal-overlay">
           <div className="modal glass">
-
             {modal === "incidentList" && (
               <>
                 <h2>Full Incident List</h2>
@@ -465,7 +546,6 @@ export default function App() {
                 }
               </>
             )}
-
             {modal === "severity" && (
               <>
                 <h2>Severity Scaling</h2>
@@ -477,7 +557,6 @@ export default function App() {
                 <textarea value={severityNotes} onChange={e => setSeverityNotes(e.target.value)} rows={3} style={{ resize: "vertical" }} />
               </>
             )}
-
             {modal === "population" && (
               <>
                 <h2>Population / Exposure</h2>
@@ -489,7 +568,6 @@ export default function App() {
                 ))}
               </>
             )}
-
             {modal === "routing" && (
               <>
                 <h2>Routing & Travel Time</h2>
@@ -501,25 +579,21 @@ export default function App() {
                 ))}
               </>
             )}
-
             {modal === "feasibility" && (
               <><h2>Feasibility Score</h2>
               <label>Score</label>
               <input value={feasibilityData} onChange={e => setFeasibilityData(e.target.value)} placeholder="0–100" /></>
             )}
-
             {modal === "ambulances" && (
               <><h2>Ambulances Ready?</h2>
               <label>Status</label>
               <input value={ambulanceData} onChange={e => setAmbulanceData(e.target.value)} placeholder="e.g. 4 available" /></>
             )}
-
             {modal === "weather" && (
               <><h2>Weather Constraints</h2>
               <label>Conditions</label>
               <input value={weatherData} onChange={e => setWeatherData(e.target.value)} placeholder="e.g. 25 mph wind, light rain" /></>
             )}
-
             <div className="modal-buttons">
               <button onClick={() => setModal(null)}>Close</button>
               <button onClick={() => { alert("Saved!"); setModal(null); }}>Save</button>

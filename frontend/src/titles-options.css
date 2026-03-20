@@ -1,0 +1,141 @@
+/* ═══════════════════════════════════════════════════════════════
+   TITLE PAGE — THREE OPTION CARDS
+   Paste this at the bottom of your App.css
+═══════════════════════════════════════════════════════════════ */
+
+/* Grid of three option cards */
+.title-option-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  /* Each option card */
+  .title-option-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 14px 18px;
+    text-align: left;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    transition: background var(--transition), border-color var(--transition),
+                transform var(--transition), box-shadow var(--transition);
+    animation: fadeSlideIn 0.4s ease forwards;
+    opacity: 0;
+  }
+  
+  .title-option-card:hover {
+    background: var(--amber-glow);
+    border-color: var(--border-bright);
+    transform: translateX(4px);
+    box-shadow: -3px 0 18px rgba(80, 160, 255, 0.1);
+  }
+  
+  .title-option-card:hover .title-option-tag {
+    color: var(--amber);
+  }
+  
+  /* Small tag label — "OPTION A" etc. */
+  .title-option-tag {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--amber-dim);
+    transition: color var(--transition);
+  }
+  
+  /* Bold option name */
+  .title-option-label {
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    letter-spacing: 0.06em;
+    color: var(--text);
+    text-transform: uppercase;
+  }
+  
+  /* Subtle description line */
+  .title-option-desc {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-top: 2px;
+  }
+  
+  /* ── Selected option — expanded form ── */
+  
+  /* Back row inside expanded card */
+  .title-option-back-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  /* Inline back button (smaller, ghost) */
+  .title-back-inline {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: color var(--transition), border-color var(--transition);
+  }
+  
+  .title-back-inline:hover {
+    color: var(--amber);
+    border-color: var(--amber-dim);
+    background: transparent;
+    transform: translateX(-2px);
+    box-shadow: none;
+  }
+  
+  /* Selected option heading inside card */
+  .title-option-selected-label {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--amber);
+    margin-bottom: 12px;
+  }
+  
+  /* Enter system CTA button */
+  .title-enter-btn {
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px 18px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    background: var(--amber-glow);
+    border: 1px solid var(--amber-dim);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+    animation: softPulse 3s ease 0.5s infinite;
+  }
+  
+  .title-enter-btn:hover {
+    background: rgba(80, 160, 255, 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(80, 160, 255, 0.15);
+    color: var(--amber);
+    border-color: var(--border-bright);
+  }
