@@ -20,6 +20,12 @@ class Disaster(models.Model):
     confidence_score = models.FloatField(default=0)
     population_affected = models.IntegerField(default=0)
     priority_score = models.FloatField(default=0)
+    analysis_details = models.JSONField(default=dict, blank=True)
+    capability_match = models.JSONField(default=dict, blank=True)
+    final_plan = models.JSONField(default=dict, blank=True)
+    alerts = models.JSONField(default=list, blank=True)
+    needs_operator_review = models.BooleanField(default=False)
+    needs_mutual_aid = models.BooleanField(default=False)
     
     # Status
     status = models.CharField(max_length=20, default='reported')

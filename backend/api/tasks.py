@@ -3,6 +3,7 @@ from .models import Disaster
 import sys
 import os
 import logging
+from .ml.incident_analysis import analyze_and_plan_incident
 
 logger = logging.getLogger(__name__)
 
@@ -28,24 +29,47 @@ def analyze_disaster(disaster_id):
         except Exception as e:
             logger.warning(f"❌ Geocoding error: {e}")
 
-        # Step 2: Run ensemble detection
+        text = f"{disaster.disaster_type} {disaster.description}".strip()
+
+        # Step 2: Run hybrid incident analysis + capability matching + escalation
+        try:
+            planning = analyze_and_plan_incident(
+                text=text,
+                latitude=disaster.latitude,
+                longitude=disaster.longitude,
+                population_hint=disaster.population_affected,
+            )
+            analysis = planning.get('analysis', {})
+            disaster.confidence_score = float(analysis.get('confidence') or disaster.confidence_score or 0)
+            disaster.severity_score = float(analysis.get('severity_score') or disaster.severity_score or 0)
+            disaster.analysis_details = analysis
+            disaster.capability_match = planning.get('capability_match', {})
+            disaster.final_plan = planning.get('final_plan', {})
+            disaster.alerts = planning.get('alerts', [])
+            disaster.needs_mutual_aid = bool(planning.get('actions', {}).get('request_mutual_aid'))
+            disaster.needs_operator_review = bool(planning.get('actions', {}).get('escalate_to_operator_review'))
+            logger.warning(f"✅ Incident planning result ready for disaster {disaster.id}")
+        except Exception as e:
+            logger.warning(f"❌ Incident planning error: {e}")
+
+        # Step 3: Run ensemble detection as secondary confidence check
         try:
             sys.path.append(os.path.join(os.path.dirname(__file__), 'ml'))
             from disaster_detection import DisasterEnsembleSystem
             ensemble = DisasterEnsembleSystem(
                 model_dir=os.path.join(os.path.dirname(__file__), 'ml', 'disaster_models')
             )
-            text = f"{disaster.disaster_type} {disaster.description}"
             result = ensemble.detect(text)
             logger.warning(f"✅ Ensemble result: {result}")
-            if result['detected']:
-                disaster.confidence_score = result['confidence']
-                disaster.severity_score = result['severity']
-                disaster.save()
+            if result.get('detected'):
+                ensemble_confidence = float(result.get('confidence') or 0)
+                ensemble_severity = float(result.get('severity') or disaster.severity_score or 0)
+                disaster.confidence_score = max(disaster.confidence_score or 0, ensemble_confidence)
+                disaster.severity_score = max(disaster.severity_score or 0, ensemble_severity)
         except Exception as e:
             logger.warning(f"❌ Ensemble error: {e}")
 
-        # Step 3: Run population model
+        # Step 4: Run population model
         try:
             if disaster.latitude and disaster.longitude:
                 sys.path.append(os.path.join(os.path.dirname(__file__), 'ml'))
@@ -64,22 +88,19 @@ def analyze_disaster(disaster_id):
                 logger.warning(f"✅ Population result: {pop_result}")
                 if pop_result:
                     disaster.population_affected = pop_result['total_population']
-                    disaster.save()
             else:
                 logger.warning("⚠️ Skipping population model - no lat/lon")
         except Exception as e:
             logger.warning(f"❌ Population model error: {e}")
 
-        # Step 4: Compute a priority score based on what we know so far.
-        # No response time is known yet, so this uses severity * population.
+        # Step 5: Compute priority score
         try:
             disaster.compute_priority()
-            disaster.save()
             logger.warning(f"🟠 Priority score set to {disaster.priority_score}")
         except Exception as e:
             logger.warning(f"❌ Priority calculation error: {e}")
 
-        # Step 5: Mark as analyzed
+        # Step 6: Mark as analyzed
         disaster.status = 'analyzed'
         disaster.save()
         return {'success': True, 'disaster_id': disaster_id}

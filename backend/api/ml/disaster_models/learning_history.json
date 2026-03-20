@@ -896,5 +896,2059 @@
       }
     },
     "timestamp": "2026-03-06T01:00:23.773019"
+  },
+  {
+    "text": "huge fire people injured at 410 s morgan st",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 27.297637075329924,
+      "confidence_level": "low",
+      "severity": 5,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 24.595274150659844,
+          "confidence_level": "low",
+          "severity": 5,
+          "all_probabilities": {
+            "chemical_spill": 11.620748442469615,
+            "earthquake": 9.281993787363666,
+            "fire": 24.595274150659844,
+            "flood": 9.232877458217146,
+            "medical_emergency": 15.146360355669582,
+            "none": 14.319146664691104,
+            "traffic_collision": 15.803599140929045
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T00:52:18.443990"
+  },
+  {
+    "text": "small fire few people hurt at 920 s harrision st",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 29.0970057107104,
+      "confidence_level": "low",
+      "severity": 5,
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 28.1940114214208,
+          "confidence_level": "low",
+          "severity": 5,
+          "all_probabilities": {
+            "chemical_spill": 11.768119020179538,
+            "earthquake": 8.85284083955557,
+            "fire": 28.1940114214208,
+            "flood": 8.83963529486045,
+            "medical_emergency": 13.643316845794654,
+            "none": 15.326415467668225,
+            "traffic_collision": 13.375661110520767
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T00:52:18.635738"
+  },
+  {
+    "text": "10 car pileup at 1250 w monroe st",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 25.7356712824292,
+      "confidence_level": "low",
+      "severity": 5,
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 25.7356712824292,
+          "confidence_level": "low",
+          "severity": 5,
+          "all_probabilities": {
+            "chemical_spill": 12.018524215399614,
+            "earthquake": 10.615093584215975,
+            "fire": 14.86859072381237,
+            "flood": 10.53342495027752,
+            "medical_emergency": 12.63357903091189,
+            "none": 13.595116212953439,
+            "traffic_collision": 25.7356712824292
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T00:52:18.646389"
+  },
+  {
+    "text": "huge chemical spill people injured at 410s morgan st",
+    "result": {
+      "detected": true,
+      "disaster_type": "chemical_spill",
+      "confidence": 19.597420803640784,
+      "confidence_level": "low",
+      "severity": 5,
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "chemical_spill": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "chemical_spill",
+          "confidence": 19.597420803640784,
+          "confidence_level": "low",
+          "severity": 5,
+          "all_probabilities": {
+            "chemical_spill": 19.597420803640784,
+            "earthquake": 10.053189343281979,
+            "fire": 13.413636367133602,
+            "flood": 9.927882663434916,
+            "medical_emergency": 14.896617662919676,
+            "none": 14.24039666739596,
+            "traffic_collision": 17.87085649219308
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:00:23.261016"
+  },
+  {
+    "text": "big school bus crashed into pole at 667 w madison",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 20.549021027779222,
+      "confidence_level": "low",
+      "severity": 5,
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 20.549021027779222,
+          "confidence_level": "low",
+          "severity": 5,
+          "all_probabilities": {
+            "chemical_spill": 14.977844346967203,
+            "earthquake": 10.33768890302519,
+            "fire": 16.02667715122094,
+            "flood": 10.275213452743397,
+            "medical_emergency": 12.415024561059983,
+            "none": 15.418530557204067,
+            "traffic_collision": 20.549021027779222
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:00:23.453879"
+  },
+  {
+    "text": "there is something strange happening near the river please help",
+    "result": {
+      "detected": true,
+      "disaster_type": "none",
+      "confidence": 17.792367288968432,
+      "confidence_level": "low",
+      "severity": 4,
+      "response_types": [],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "flood": 1.0,
+        "none": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 10,
+          "confidence_level": "low",
+          "matched_keywords": []
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "none",
+          "confidence": 17.792367288968432,
+          "confidence_level": "low",
+          "severity": 4,
+          "response_types": [],
+          "primary_response": "ambulance",
+          "response_scores": {},
+          "all_probabilities": {
+            "chemical_spill": 12.376866327083649,
+            "earthquake": 10.519678844794814,
+            "fire": 14.679930683263159,
+            "flood": 15.739735822889095,
+            "medical_emergency": 11.555532191535622,
+            "none": 17.792367288968432,
+            "traffic_collision": 17.335888841465234
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:07:09.116076"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 32.18887141688575,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire",
+        "police"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 32.18887141688575,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire",
+            "police"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {},
+          "all_probabilities": {
+            "chemical_spill": 10.204453859150808,
+            "earthquake": 10.260362985517627,
+            "fire": 15.723672439121964,
+            "flood": 11.476228385105452,
+            "medical_emergency": 9.77487158480096,
+            "none": 10.371539329417445,
+            "traffic_collision": 32.18887141688575
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:07:09.127249"
+  },
+  {
+    "text": "there is something strange happening near the river please help",
+    "result": {
+      "detected": true,
+      "disaster_type": "none",
+      "confidence": 17.792367288968432,
+      "confidence_level": "low",
+      "severity": 4,
+      "response_types": [],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "flood": 1.0,
+        "none": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 10,
+          "confidence_level": "low",
+          "matched_keywords": []
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "none",
+          "confidence": 17.792367288968432,
+          "confidence_level": "low",
+          "severity": 4,
+          "response_types": [],
+          "primary_response": "ambulance",
+          "response_scores": {},
+          "all_probabilities": {
+            "chemical_spill": 12.376866327083649,
+            "earthquake": 10.519678844794814,
+            "fire": 14.679930683263159,
+            "flood": 15.739735822889095,
+            "medical_emergency": 11.555532191535622,
+            "none": 17.792367288968432,
+            "traffic_collision": 17.335888841465234
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:07:39.755866"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 32.18887141688575,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire",
+        "police"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 32.18887141688575,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire",
+            "police"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {},
+          "all_probabilities": {
+            "chemical_spill": 10.204453859150808,
+            "earthquake": 10.260362985517627,
+            "fire": 15.723672439121964,
+            "flood": 11.476228385105452,
+            "medical_emergency": 9.77487158480096,
+            "none": 10.371539329417445,
+            "traffic_collision": 32.18887141688575
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:07:39.767461"
+  },
+  {
+    "text": "there is something strange happening near the river please help",
+    "result": {
+      "detected": true,
+      "disaster_type": "none",
+      "confidence": 17.792367288968432,
+      "confidence_level": "low",
+      "severity": 4,
+      "response_types": [],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "flood": 1.0,
+        "none": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 10,
+          "confidence_level": "low",
+          "matched_keywords": []
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "none",
+          "confidence": 17.792367288968432,
+          "confidence_level": "low",
+          "severity": 4,
+          "response_types": [],
+          "primary_response": "ambulance",
+          "response_scores": {},
+          "all_probabilities": {
+            "chemical_spill": 12.376866327083649,
+            "earthquake": 10.519678844794814,
+            "fire": 14.679930683263159,
+            "flood": 15.739735822889095,
+            "medical_emergency": 11.555532191535622,
+            "none": 17.792367288968432,
+            "traffic_collision": 17.335888841465234
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:08:03.416387"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 32.18887141688575,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire",
+        "police"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 32.18887141688575,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire",
+            "police"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {},
+          "all_probabilities": {
+            "chemical_spill": 10.204453859150808,
+            "earthquake": 10.260362985517627,
+            "fire": 15.723672439121964,
+            "flood": 11.476228385105452,
+            "medical_emergency": 9.77487158480096,
+            "none": 10.371539329417445,
+            "traffic_collision": 32.18887141688575
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:08:03.429264"
+  },
+  {
+    "text": "there is something strange happening near the river please help",
+    "result": {
+      "detected": true,
+      "disaster_type": "none",
+      "confidence": 17.792367288968432,
+      "confidence_level": "low",
+      "severity": 4,
+      "response_types": [],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "flood": 1.0,
+        "none": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 10,
+          "confidence_level": "low",
+          "matched_keywords": []
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "none",
+          "confidence": 17.792367288968432,
+          "confidence_level": "low",
+          "severity": 4,
+          "response_types": [],
+          "primary_response": "ambulance",
+          "response_scores": {},
+          "all_probabilities": {
+            "chemical_spill": 12.376866327083649,
+            "earthquake": 10.519678844794814,
+            "fire": 14.679930683263159,
+            "flood": 15.739735822889095,
+            "medical_emergency": 11.555532191535622,
+            "none": 17.792367288968432,
+            "traffic_collision": 17.335888841465234
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:08:20.855555"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 32.18887141688575,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire",
+        "police"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 32.18887141688575,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire",
+            "police"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {},
+          "all_probabilities": {
+            "chemical_spill": 10.204453859150808,
+            "earthquake": 10.260362985517627,
+            "fire": 15.723672439121964,
+            "flood": 11.476228385105452,
+            "medical_emergency": 9.77487158480096,
+            "none": 10.371539329417445,
+            "traffic_collision": 32.18887141688575
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:08:20.867568"
+  },
+  {
+    "text": "there is something strange happening near the river please help",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 17.7883741664602,
+      "confidence_level": "low",
+      "severity": 4,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "flood": 1.0,
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 10,
+          "confidence_level": "low",
+          "matched_keywords": []
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 17.7883741664602,
+          "confidence_level": "low",
+          "severity": 4,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.6783802666915613,
+            "fire": 0.7140880542347915,
+            "police": 0.3831342453893146
+          },
+          "all_probabilities": {
+            "chemical_spill": 13.146057793458798,
+            "earthquake": 10.235508959788476,
+            "fire": 14.332584898829772,
+            "flood": 15.43622278667308,
+            "medical_emergency": 11.310817768683892,
+            "none": 17.750433626105778,
+            "traffic_collision": 17.7883741664602
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:09:11.953001"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:09:11.965667"
+  },
+  {
+    "text": "there is something strange happening near the river please help",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 17.7883741664602,
+      "confidence_level": "low",
+      "severity": 4,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "flood": 1.0,
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "flood",
+          "confidence": 10,
+          "confidence_level": "low",
+          "matched_keywords": []
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 17.7883741664602,
+          "confidence_level": "low",
+          "severity": 4,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.6783802666915613,
+            "fire": 0.7140880542347915,
+            "police": 0.3831342453893146
+          },
+          "all_probabilities": {
+            "chemical_spill": 13.146057793458798,
+            "earthquake": 10.235508959788476,
+            "fire": 14.332584898829772,
+            "flood": 15.43622278667308,
+            "medical_emergency": 11.310817768683892,
+            "none": 17.750433626105778,
+            "traffic_collision": 17.7883741664602
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:09:33.404780"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:09:33.417958"
+  },
+  {
+    "text": "10 car oileup at 410 s morgan st",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 26.78087902038132,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 26.78087902038132,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.722142869485254,
+            "fire": 0.7440247581582837,
+            "police": 0.4959262192867113
+          },
+          "all_probabilities": {
+            "chemical_spill": 12.609053264928665,
+            "earthquake": 10.283036053560975,
+            "fire": 14.544396151750666,
+            "flood": 10.247510121950208,
+            "medical_emergency": 12.305117438961187,
+            "none": 13.230007948466977,
+            "traffic_collision": 26.78087902038132
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:12:25.915458"
+  },
+  {
+    "text": "car crash small at 665 w harrision",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 30.388666282639974,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 30.388666282639974,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7310500781001578,
+            "fire": 0.7439131693189719,
+            "police": 0.5178032866457932
+          },
+          "all_probabilities": {
+            "chemical_spill": 11.948997700291091,
+            "earthquake": 9.550319718962177,
+            "fire": 13.566259201036596,
+            "flood": 9.492255627535284,
+            "medical_emergency": 12.022299583335943,
+            "none": 13.031201886198938,
+            "traffic_collision": 30.388666282639974
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:12:26.101008"
+  },
+  {
+    "text": "huge fire lost of people hurt at 764 n sheridan",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 26.032728057244626,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 22.065456114489255,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.63640306833957,
+            "fire": 0.7572048681004175,
+            "police": 0.41756823005623456
+          },
+          "all_probabilities": {
+            "chemical_spill": 17.778862553640234,
+            "earthquake": 9.029939071719545,
+            "fire": 22.065456114489255,
+            "flood": 9.99882858901101,
+            "medical_emergency": 11.900441355542114,
+            "none": 13.053404714159358,
+            "traffic_collision": 16.173067601438476
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:12:26.113978"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:13:30.264900"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:13:42.445171"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:02.703971"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:03.130361"
+  },
+  {
+    "text": "small fire near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 30.601089344060693,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 31.202178688121386,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.5861759896408002,
+            "fire": 0.8265731030606124,
+            "police": 0.36530362130801075
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.559278550158336,
+            "earthquake": 10.035726362973744,
+            "fire": 31.202178688121386,
+            "flood": 12.283910240070462,
+            "medical_emergency": 8.788511454288855,
+            "none": 10.143256875876176,
+            "traffic_collision": 16.987137828511035
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:05.950486"
+  },
+  {
+    "text": "major fire with heavy smoke and trapped people at 55 N Wacker Dr",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 39.580843640620266,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 50,
+          "confidence_level": "medium",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 29.161687281240532,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.5840514747441896,
+            "fire": 0.7678149005237364,
+            "police": 0.34584789655051223
+          },
+          "all_probabilities": {
+            "chemical_spill": 12.88232624369082,
+            "earthquake": 8.531485675275489,
+            "fire": 29.161687281240532,
+            "flood": 10.39798009295975,
+            "medical_emergency": 11.882226981105106,
+            "none": 11.503791970575318,
+            "traffic_collision": 15.640501755153
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:05.973027"
+  },
+  {
+    "text": "earthquake lots of people hurt at 945 W harrison",
+    "result": {
+      "detected": true,
+      "disaster_type": "earthquake",
+      "confidence": 38.83589326268773,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "earthquake",
+        "quake"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "earthquake": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 60,
+          "confidence_level": "medium",
+          "matched_keywords": [
+            "earthquake",
+            "quake"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 17.671786525375467,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7492390639621438,
+            "fire": 0.7359464341821603,
+            "police": 0.5327448656171536
+          },
+          "all_probabilities": {
+            "chemical_spill": 14.91617005611535,
+            "earthquake": 17.671786525375467,
+            "fire": 12.629166946646752,
+            "flood": 10.35093340178389,
+            "medical_emergency": 12.891163172611478,
+            "none": 14.209742411896773,
+            "traffic_collision": 17.331037485570302
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:05.988989"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:06.005215"
+  },
+  {
+    "text": "major fire near river north",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 38.13634056309857,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 50,
+          "confidence_level": "medium",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 26.27268112619715,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.648209789478156,
+            "fire": 0.8266119366940068,
+            "police": 0.36048428968484814
+          },
+          "all_probabilities": {
+            "chemical_spill": 13.298426342294023,
+            "earthquake": 9.826370172757766,
+            "fire": 26.27268112619715,
+            "flood": 16.140625133063754,
+            "medical_emergency": 9.594422372777155,
+            "none": 9.921080912026683,
+            "traffic_collision": 14.946393940883453
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:06.021748"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:18.074367"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:40.105955"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:40.859146"
+  },
+  {
+    "text": "small fire near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 30.601089344060693,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 30,
+          "confidence_level": "low",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 31.202178688121386,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.5861759896408002,
+            "fire": 0.8265731030606124,
+            "police": 0.36530362130801075
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.559278550158336,
+            "earthquake": 10.035726362973744,
+            "fire": 31.202178688121386,
+            "flood": 12.283910240070462,
+            "medical_emergency": 8.788511454288855,
+            "none": 10.143256875876176,
+            "traffic_collision": 16.987137828511035
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:44.010869"
+  },
+  {
+    "text": "major fire with heavy smoke and trapped people at 55 N Wacker Dr",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 39.580843640620266,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 50,
+          "confidence_level": "medium",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 29.161687281240532,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.5840514747441896,
+            "fire": 0.7678149005237364,
+            "police": 0.34584789655051223
+          },
+          "all_probabilities": {
+            "chemical_spill": 12.88232624369082,
+            "earthquake": 8.531485675275489,
+            "fire": 29.161687281240532,
+            "flood": 10.39798009295975,
+            "medical_emergency": 11.882226981105106,
+            "none": 11.503791970575318,
+            "traffic_collision": 15.640501755153
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:44.037791"
+  },
+  {
+    "text": "earthquake lots of people hurt at 945 W harrison",
+    "result": {
+      "detected": true,
+      "disaster_type": "earthquake",
+      "confidence": 38.83589326268773,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "earthquake",
+        "quake"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "earthquake": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 60,
+          "confidence_level": "medium",
+          "matched_keywords": [
+            "earthquake",
+            "quake"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "earthquake",
+          "confidence": 17.671786525375467,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7492390639621438,
+            "fire": 0.7359464341821603,
+            "police": 0.5327448656171536
+          },
+          "all_probabilities": {
+            "chemical_spill": 14.91617005611535,
+            "earthquake": 17.671786525375467,
+            "fire": 12.629166946646752,
+            "flood": 10.35093340178389,
+            "medical_emergency": 12.891163172611478,
+            "none": 14.209742411896773,
+            "traffic_collision": 17.331037485570302
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:44.057243"
+  },
+  {
+    "text": "10 car pile up on I-90 near downtown",
+    "result": {
+      "detected": true,
+      "disaster_type": "traffic_collision",
+      "confidence": 33.2068428287262,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "traffic_collision": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "traffic_collision",
+          "confidence": 33.2068428287262,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7431376998386482,
+            "fire": 0.8133094988268681,
+            "police": 0.5353955249349723
+          },
+          "all_probabilities": {
+            "chemical_spill": 10.724040069490115,
+            "earthquake": 9.942252961986954,
+            "fire": 15.315153419307473,
+            "flood": 11.222371036336613,
+            "medical_emergency": 9.524113265335728,
+            "none": 10.065226418816914,
+            "traffic_collision": 33.2068428287262
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:44.077922"
+  },
+  {
+    "text": "major fire near river north",
+    "result": {
+      "detected": true,
+      "disaster_type": "fire",
+      "confidence": 38.13634056309857,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [
+        "fire"
+      ],
+      "agreement": "moderate",
+      "voting_details": {
+        "fire": 2.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 50,
+          "confidence_level": "medium",
+          "matched_keywords": [
+            "fire"
+          ]
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "fire",
+          "confidence": 26.27268112619715,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.648209789478156,
+            "fire": 0.8266119366940068,
+            "police": 0.36048428968484814
+          },
+          "all_probabilities": {
+            "chemical_spill": 13.298426342294023,
+            "earthquake": 9.826370172757766,
+            "fire": 26.27268112619715,
+            "flood": 16.140625133063754,
+            "medical_emergency": 9.594422372777155,
+            "none": 9.921080912026683,
+            "traffic_collision": 14.946393940883453
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T01:14:44.098630"
   }
 ]

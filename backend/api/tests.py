@@ -2,8 +2,9 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from django.core.management import call_command
 from io import StringIO
-from .models import Disaster
+from .models import Disaster, FireStation, Hospital
 from .ml.text_priority_parser import parse_incident_text
+from .ml.incident_analysis import analyze_and_plan_incident
 
 # Create your tests here.
 
@@ -113,6 +114,7 @@ class TextPriorityInputTests(TestCase):
 
         self.assertEqual(parsed['disaster_type'], 'fire')
         self.assertEqual(parsed['response_type'], 'fire')
+        self.assertEqual(parsed['response_types'], ['fire', 'ambulance'])
         self.assertIn('55 W Illinois', parsed['location'])
         self.assertGreater(parsed['severity_score'], 3.0)
         self.assertGreater(parsed['population_affected'], 100)
@@ -130,3 +132,57 @@ class TextPriorityInputTests(TestCase):
         self.assertIn('Priority Ranking', output)
         self.assertIn('#1 | priority=', output)
         self.assertIn('major fire at 200 Lake Shore Dr', output)
+
+    def test_parse_incident_text_pileup_maps_to_ambulance(self):
+        parsed = parse_incident_text('10 car pile up on I-90 near downtown')
+        self.assertEqual(parsed['disaster_type'], 'traffic_collision')
+        self.assertEqual(parsed['response_type'], 'ambulance')
+        self.assertEqual(parsed['response_types'], ['ambulance', 'fire', 'police'])
+        self.assertGreaterEqual(parsed['population_affected'], 20)
+
+
+class IncidentPlanningTests(TestCase):
+    def setUp(self):
+        FireStation.objects.create(
+            name='Central Station',
+            address='100 Main St',
+            latitude=41.88,
+            longitude=-87.63,
+            available_trucks=4,
+            operational=True,
+        )
+        Hospital.objects.create(
+            name='Metro Hospital',
+            latitude=41.89,
+            longitude=-87.62,
+            available_ambulances=3,
+            operational=True,
+        )
+
+    def test_multi_vehicle_pileup_requires_ambulance(self):
+        result = analyze_and_plan_incident(
+            text='10 car pile up on I-90 near downtown',
+            latitude=41.88,
+            longitude=-87.63,
+        )
+
+        analysis = result['analysis']
+        capability = result['capability_match']
+
+        self.assertEqual(analysis['response_type'], 'ambulance')
+        self.assertEqual(analysis['response_types'], ['ambulance', 'fire', 'police'])
+        self.assertEqual(analysis['incident_category'], 'traffic_collision')
+        self.assertGreaterEqual(capability['required_roles'].get('ems', 0), 2)
+        self.assertIn('ems', capability['eligible_units'])
+
+    def test_low_confidence_triggers_downgrade_and_review(self):
+        result = analyze_and_plan_incident(
+            text='there is something strange happening near the river please help',
+            latitude=41.88,
+            longitude=-87.63,
+        )
+
+        self.assertTrue(result['cases']['low_confidence_input'])
+        self.assertTrue(result['actions']['downgrade_plan'])
+        self.assertTrue(result['actions']['escalate_to_operator_review'])
+        self.assertGreaterEqual(len(result['alerts']), 1)

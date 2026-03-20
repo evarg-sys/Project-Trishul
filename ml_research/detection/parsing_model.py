@@ -6,6 +6,15 @@ from collections import defaultdict, Counter
 import json
 from datetime import datetime
 
+try:
+    from .incident_decision import derive_incident_category, build_capability_requirements
+except Exception:
+    try:
+        from incident_decision import derive_incident_category, build_capability_requirements
+    except Exception:
+        derive_incident_category = None
+        build_capability_requirements = None
+
 # Check available libraries
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -423,6 +432,25 @@ class DisasterEnsembleSystem:
         
         # Combine results with weighted voting
         final_result = self._ensemble_vote(rule_result, supervised_result, unsupervised_result)
+
+        capability_result = {
+            'required_roles': {},
+            'final_plan': {'incident_category': final_result.get('disaster_type') or 'unknown', 'required_roles': {'ems': 1}},
+            'actions': {'downgrade_plan': False, 'request_mutual_aid': False, 'escalate_to_operator_review': False},
+            'cases': {'low_confidence_input': False, 'not_enough_units_available': False, 'policy_conflict': False},
+            'alerts': [],
+            'vehicle_count': 0,
+        }
+        if derive_incident_category and build_capability_requirements:
+            category_info = derive_incident_category(text, final_result.get('disaster_type'))
+            capability_result = build_capability_requirements(
+                incident_category=category_info.get('incident_category', 'unknown'),
+                severity=float(final_result.get('severity', 3) or 3),
+                confidence=float(final_result.get('confidence', 0) or 0),
+                vehicle_count=int(category_info.get('vehicle_count', 0) or 0),
+            )
+            capability_result['incident_category'] = category_info.get('incident_category', 'unknown')
+            capability_result['vehicle_count'] = int(category_info.get('vehicle_count', 0) or 0)
         
         # Add feedback mechanism
         final_result['individual_models'] = {
@@ -430,6 +458,14 @@ class DisasterEnsembleSystem:
             'supervised': supervised_result,
             'unsupervised': unsupervised_result
         }
+        final_result['capability_match'] = {
+            'required_roles': capability_result.get('required_roles', {}),
+            'vehicle_count': capability_result.get('vehicle_count', 0),
+        }
+        final_result['final_plan'] = capability_result.get('final_plan', {})
+        final_result['alerts'] = capability_result.get('alerts', [])
+        final_result['actions'] = capability_result.get('actions', {})
+        final_result['cases'] = capability_result.get('cases', {})
         
         # Save to history
         self.learning_history.append({
@@ -450,7 +486,12 @@ class DisasterEnsembleSystem:
             'confidence_level': final_result.get('confidence_level'),
             'severity': final_result.get('severity', 3),
             'matched_keywords': final_result.get('matched_keywords', []),
-            'ensemble_agreement': final_result.get('agreement')
+            'ensemble_agreement': final_result.get('agreement'),
+            'capability_match': final_result.get('capability_match', {}),
+            'final_plan': final_result.get('final_plan', {}),
+            'alerts': final_result.get('alerts', []),
+            'actions': final_result.get('actions', {}),
+            'cases': final_result.get('cases', {}),
         }
     
     def _ensemble_vote(self, rule_result, supervised_result, unsupervised_result):

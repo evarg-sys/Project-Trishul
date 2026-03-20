@@ -14,12 +14,25 @@ Accepted inputs:
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 from typing import Any, Optional
 
 from .priority_model import calculate_priority
 from .text_priority_parser import parse_incident_text
 from .population_model import PopulationDensityModel
+
+
+def _normalize_response_types(values: list[str] | tuple[str, ...] | None) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in values or []:
+        item = str(value or "").strip().lower()
+        if not item or item in seen:
+            continue
+        seen.add(item)
+        ordered.append(item)
+    return ordered
 
 try:
     from geopy.geocoders import Nominatim
@@ -105,10 +118,32 @@ class DispatchEngine:
 
         detection = self._detect_disaster(source_text)
         disaster_type = self._choose_disaster_type(parsed, detection)
-        response_type = self._choose_response_type(parsed, disaster_type)
         severity_score = self._choose_severity(parsed, detection)
 
         population_affected, population_meta = self._estimate_population(coords, parsed)
+
+        planning = self._run_incident_planning(
+            text=source_text,
+            coords=coords,
+            population_hint=population_affected,
+        )
+        planning_analysis = planning.get("analysis", {}) if planning else {}
+        planning_category = planning_analysis.get("incident_category")
+        response_types = self._choose_response_types(
+            source_text=source_text,
+            parsed=parsed,
+            detection=detection,
+            disaster_type=planning_category or disaster_type,
+            planning=planning_analysis,
+        )
+        response_type = response_types[0] if response_types else self._choose_response_type(parsed, disaster_type)
+        planning_severity = planning_analysis.get("severity_score")
+        if planning_severity is not None:
+            try:
+                severity_score = max(float(severity_score), float(planning_severity))
+            except Exception:
+                pass
+
         response_time_minutes, routes = self._estimate_response_time_and_routes(
             coords=coords,
             response_type=response_type,
@@ -131,10 +166,18 @@ class DispatchEngine:
             "decision": {
                 "disaster_type": disaster_type,
                 "response_type": response_type,
+                "response_types": response_types,
                 "severity_score": round(float(severity_score), 3),
                 "population_affected": int(population_affected),
                 "response_time_minutes": round(float(response_time_minutes), 3),
                 "priority_score": round(float(priority_score), 4),
+            },
+            "planning": {
+                "capability_match": planning.get("capability_match", {}) if planning else {},
+                "final_plan": planning.get("final_plan", {}) if planning else {},
+                "alerts": planning.get("alerts", []) if planning else [],
+                "actions": planning.get("actions", {}) if planning else {},
+                "cases": planning.get("cases", {}) if planning else {},
             },
             "models": {
                 "parsed": parsed,
@@ -199,6 +242,41 @@ class DispatchEngine:
             return response_type
         return "fire" if disaster_type == "fire" else "ambulance"
 
+    def _choose_response_types(
+        self,
+        *,
+        source_text: str,
+        parsed: dict[str, Any],
+        detection: dict[str, Any],
+        disaster_type: str,
+        planning: dict[str, Any],
+    ) -> list[str]:
+        planned = _normalize_response_types(planning.get("response_types") or [])
+        if planned:
+            return planned
+
+        detected = _normalize_response_types(detection.get("response_types") or [])
+        if detected:
+            return detected
+
+        parsed_responses = _normalize_response_types(parsed.get("response_types") or [])
+        if parsed_responses:
+            return parsed_responses
+
+        lowered = source_text.lower()
+        if any(token in lowered for token in ("pile up", "pile-up", "collision", "crash", "rollover", "accident", "multi-vehicle")):
+            return ["ambulance", "fire", "police"]
+
+        mapping = {
+            "fire": ["fire"],
+            "flood": ["ambulance", "fire"],
+            "earthquake": ["ambulance", "fire", "police"],
+            "traffic_collision": ["ambulance", "fire", "police"],
+            "chemical_spill": ["fire", "ambulance", "police"],
+            "medical_emergency": ["ambulance"],
+        }
+        return mapping.get(str(disaster_type or "").lower(), [self._choose_response_type(parsed, disaster_type)])
+
     def _choose_severity(self, parsed: dict[str, Any], detection: dict[str, Any]) -> float:
         parsed_severity = float(parsed.get("severity_score", 3.0))
         detected_severity = detection.get("severity")
@@ -208,6 +286,51 @@ class DispatchEngine:
             return max(parsed_severity, float(detected_severity))
         except Exception:
             return parsed_severity
+
+    def _run_incident_planning(
+        self,
+        *,
+        text: str,
+        coords: Optional[tuple[float, float]],
+        population_hint: int,
+    ) -> dict[str, Any]:
+        self._ensure_django_ready()
+
+        try:
+            from .incident_analysis import analyze_and_plan_incident
+        except Exception:
+            return {}
+
+        try:
+            lat = coords[0] if coords else None
+            lon = coords[1] if coords else None
+            return analyze_and_plan_incident(
+                text=text,
+                latitude=lat,
+                longitude=lon,
+                population_hint=population_hint,
+            )
+        except Exception:
+            return {}
+
+    def _ensure_django_ready(self) -> None:
+        try:
+            from django.apps import apps
+        except Exception:
+            return
+
+        if apps.ready:
+            return
+
+        settings_module = os.environ.get("DJANGO_SETTINGS_MODULE")
+        if not settings_module:
+            os.environ.setdefault("DJANGO_SETTINGS_MODULE", "disaster_backend.settings")
+
+        try:
+            import django
+            django.setup()
+        except Exception:
+            return
 
     def _estimate_population(
         self,

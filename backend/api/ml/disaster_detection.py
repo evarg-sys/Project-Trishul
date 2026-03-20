@@ -12,6 +12,8 @@ try:
     from sklearn.linear_model import LogisticRegression
     from sklearn.cluster import KMeans
     from sklearn.metrics.pairwise import cosine_similarity
+    from sklearn.multiclass import OneVsRestClassifier
+    from sklearn.preprocessing import MultiLabelBinarizer
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
@@ -38,6 +40,33 @@ try:
 except ImportError:
     SPACY_AVAILABLE = False
     print("⚠️ spacy not available. Run: pip install spacy")
+
+
+DEFAULT_RESPONSE_TYPES = {
+    'fire': ['fire'],
+    'flood': ['ambulance', 'fire'],
+    'earthquake': ['ambulance', 'fire', 'police'],
+    'traffic_collision': ['ambulance', 'fire', 'police'],
+    'chemical_spill': ['fire', 'ambulance', 'police'],
+    'medical_emergency': ['ambulance'],
+    'none': [],
+}
+
+
+def _normalize_response_types(values):
+    seen = set()
+    ordered = []
+    for value in values or []:
+        item = str(value or '').strip().lower()
+        if not item or item in seen:
+            continue
+        seen.add(item)
+        ordered.append(item)
+    return ordered
+
+
+def _default_response_types(disaster_type: str) -> list[str]:
+    return list(DEFAULT_RESPONSE_TYPES.get(str(disaster_type or '').lower(), ['ambulance']))
 
 
 class DisasterEnsembleSystem:
@@ -156,6 +185,8 @@ class DisasterEnsembleSystem:
         self.supervised_vectorizer = None
         self.supervised_classifier = None
         self.supervised_severity_model = None
+        self.supervised_response_model = None
+        self.supervised_response_binarizer = None
         
         # Try to load existing model
         supervised_path = os.path.join(self.model_dir, 'supervised_model.pkl')
@@ -166,6 +197,8 @@ class DisasterEnsembleSystem:
                 self.supervised_vectorizer = data['vectorizer']
                 self.supervised_classifier = data['classifier']
                 self.supervised_severity_model = data.get('severity_model')
+                self.supervised_response_model = data.get('response_model')
+                self.supervised_response_binarizer = data.get('response_binarizer')
                 print("  ✓ Loaded existing supervised model")
                 return
             except:
@@ -173,7 +206,7 @@ class DisasterEnsembleSystem:
         
         print("  ⚠️ No supervised model found (will train when data available)")
     
-    def train_supervised(self, texts: List[str], labels: List[str], severities: List[int]):
+    def train_supervised(self, texts: List[str], labels: List[str], severities: List[int], response_bundles: Optional[List[List[str]]] = None):
         """Train supervised model on labeled data"""
         if not SKLEARN_AVAILABLE:
             print("❌ scikit-learn not available")
@@ -193,6 +226,17 @@ class DisasterEnsembleSystem:
         # Train severity model
         self.supervised_severity_model = LogisticRegression(max_iter=1000, random_state=42)
         self.supervised_severity_model.fit(X, severities)
+
+        # Train multi-response bundle model
+        bundles = response_bundles or [_default_response_types(label) for label in labels]
+        self.supervised_response_binarizer = MultiLabelBinarizer()
+        y_response = self.supervised_response_binarizer.fit_transform([
+            _normalize_response_types(bundle) for bundle in bundles
+        ])
+        self.supervised_response_model = OneVsRestClassifier(
+            LogisticRegression(max_iter=1000, random_state=42)
+        )
+        self.supervised_response_model.fit(X, y_response)
         
         # Save
         supervised_path = os.path.join(self.model_dir, 'supervised_model.pkl')
@@ -200,7 +244,9 @@ class DisasterEnsembleSystem:
             pickle.dump({
                 'vectorizer': self.supervised_vectorizer,
                 'classifier': self.supervised_classifier,
-                'severity_model': self.supervised_severity_model
+                'severity_model': self.supervised_severity_model,
+                'response_model': self.supervised_response_model,
+                'response_binarizer': self.supervised_response_binarizer,
             }, f)
         
         print("  ✅ Supervised model trained and saved")
@@ -222,6 +268,31 @@ class DisasterEnsembleSystem:
         severity = 3
         if self.supervised_severity_model:
             severity = self.supervised_severity_model.predict(X)[0]
+
+        response_types = _default_response_types(pred)
+        response_scores = {}
+        if self.supervised_response_model is not None and self.supervised_response_binarizer is not None:
+            try:
+                raw_scores = self.supervised_response_model.predict_proba(X)[0]
+                response_scores = {
+                    label: float(score)
+                    for label, score in zip(self.supervised_response_binarizer.classes_, raw_scores)
+                }
+                response_types = [
+                    label
+                    for label, score in response_scores.items()
+                    if score >= 0.55
+                ]
+                if not response_types and response_scores:
+                    response_types = _default_response_types(pred)
+            except Exception:
+                response_types = _default_response_types(pred)
+
+        if pred == 'none':
+            response_types = []
+
+        response_types = _normalize_response_types(response_types)
+        primary_response = response_types[0] if response_types else None
         
         return {
             'detected': True,
@@ -229,6 +300,9 @@ class DisasterEnsembleSystem:
             'confidence': confidence,
             'confidence_level': 'high' if confidence >= 70 else 'medium' if confidence >= 40 else 'low',
             'severity': int(severity),
+            'response_types': response_types,
+            'primary_response': primary_response,
+            'response_scores': response_scores,
             'all_probabilities': dict(zip(self.supervised_classifier.classes_, proba * 100))
         }
     
@@ -449,6 +523,8 @@ class DisasterEnsembleSystem:
             'confidence': final_result.get('confidence', 0),
             'confidence_level': final_result.get('confidence_level'),
             'severity': final_result.get('severity', 3),
+            'response_types': final_result.get('response_types', []),
+            'primary_response': final_result.get('primary_response'),
             'matched_keywords': final_result.get('matched_keywords', []),
             'ensemble_agreement': final_result.get('agreement')
         }
@@ -484,6 +560,9 @@ class DisasterEnsembleSystem:
                               if r.get('detected') and r.get('disaster_type') == disaster_type)
         
         agreement = 'strong' if num_models_agree == 3 else 'moderate' if num_models_agree == 2 else 'weak'
+        response_types = _normalize_response_types(supervised_result.get('response_types') or _default_response_types(disaster_type))
+        if disaster_type == 'none':
+            response_types = []
         
         return {
             'detected': True,
@@ -491,12 +570,14 @@ class DisasterEnsembleSystem:
             'confidence': avg_confidence,
             'confidence_level': 'high' if avg_confidence >= 70 else 'medium' if avg_confidence >= 40 else 'low',
             'severity': supervised_result.get('severity', 3),
+            'response_types': response_types,
+            'primary_response': response_types[0] if response_types else None,
             'matched_keywords': rule_result.get('matched_keywords', []),
             'agreement': agreement,
             'voting_details': votes
         }
     
-    def provide_feedback(self, text: str, correct_type: str, correct_severity: int):
+    def provide_feedback(self, text: str, correct_type: str, correct_severity: int, correct_responses: Optional[List[str]] = None):
         """User provides feedback to improve the system"""
         print(f"\n📝 Recording feedback: {text[:50]}... -> {correct_type} (severity: {correct_severity})")
         
@@ -505,7 +586,8 @@ class DisasterEnsembleSystem:
             'text': text,
             'feedback': {
                 'correct_type': correct_type,
-                'correct_severity': correct_severity
+                'correct_severity': correct_severity,
+                'correct_responses': _normalize_response_types(correct_responses or _default_response_types(correct_type)),
             },
             'timestamp': datetime.now().isoformat()
         })
@@ -523,8 +605,12 @@ class DisasterEnsembleSystem:
         texts = [h['text'] for h in feedback_examples]
         labels = [h['feedback']['correct_type'] for h in feedback_examples]
         severities = [h['feedback']['correct_severity'] for h in feedback_examples]
+        response_bundles = [
+            _normalize_response_types(h['feedback'].get('correct_responses') or _default_response_types(h['feedback']['correct_type']))
+            for h in feedback_examples
+        ]
         
-        self.train_supervised(texts, labels, severities)
+        self.train_supervised(texts, labels, severities, response_bundles=response_bundles)
     
     def _show_system_status(self):
         """Show status of all three models"""

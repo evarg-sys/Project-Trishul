@@ -1,0 +1,44 @@
+[
+  {
+    "text": "huge chemical spill people injured",
+    "label": "chemical_spill",
+    "severity": 5,
+    "source": "cli_confirmed"
+  },
+  {
+    "text": "big school bus crashed into pole",
+    "label": "traffic_collision",
+    "severity": 5,
+    "source": "cli_confirmed"
+  },
+  {
+    "text": "10 car oileup",
+    "label": "traffic_collision",
+    "severity": 5,
+    "response_types": [
+      "ambulance",
+      "fire"
+    ],
+    "source": "cli_confirmed"
+  },
+  {
+    "text": "huge fire lost of people hurt",
+    "label": "fire",
+    "severity": 5,
+    "response_types": [
+      "ambulance",
+      "fire"
+    ],
+    "source": "cli_confirmed"
+  },
+  {
+    "text": "car crash small",
+    "label": "traffic_collision",
+    "severity": 5,
+    "response_types": [
+      "ambulance",
+      "fire"
+    ],
+    "source": "cli_confirmed"
+  }
+]

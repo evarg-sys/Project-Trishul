@@ -111,6 +111,18 @@ class DispatchEngineTests(unittest.TestCase):
         self.assertAlmostEqual(response_minutes, 6.0, places=3)
         self.assertEqual(result["models"]["routes"]["method"], "routing_model")
 
+    def test_pileup_text_sets_ambulance_and_planning(self):
+        result = self.engine.dispatch(
+            parsed_text="10 car pile up on I-90 near downtown",
+            include_routes=False,
+        )
+
+        self.assertEqual(result["decision"]["response_type"], "ambulance")
+        self.assertEqual(result["decision"]["response_types"], ["ambulance", "fire", "police"])
+        self.assertIn("planning", result)
+        self.assertIn("final_plan", result["planning"])
+        self.assertIn("alerts", result["planning"])
+
 
 if __name__ == "__main__":
     unittest.main()
