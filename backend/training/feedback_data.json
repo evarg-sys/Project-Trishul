@@ -40,5 +40,16 @@
       "fire"
     ],
     "source": "cli_confirmed"
+  },
+  {
+    "text": "chemical spill",
+    "label": "chemical_spill",
+    "severity": 5,
+    "response_types": [
+      "ambulance",
+      "fire",
+      "police"
+    ],
+    "source": "cli_confirmed"
   }
 ]

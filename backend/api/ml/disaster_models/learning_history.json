@@ -2950,5 +2950,121 @@
       }
     },
     "timestamp": "2026-03-20T01:14:44.098630"
+  },
+  {
+    "text": "chemical spill at 666w harrison",
+    "result": {
+      "detected": true,
+      "disaster_type": "chemical_spill",
+      "confidence": 31.1674461883377,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire",
+        "police"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "chemical_spill": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "chemical_spill",
+          "confidence": 31.1674461883377,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire",
+            "police"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7581314887798111,
+            "fire": 0.7706137463123311,
+            "police": 0.5761309196192987
+          },
+          "all_probabilities": {
+            "chemical_spill": 31.1674461883377,
+            "earthquake": 9.103856028930215,
+            "fire": 12.44593730913454,
+            "flood": 9.048113594737197,
+            "medical_emergency": 10.976364254075694,
+            "none": 11.800046133981676,
+            "traffic_collision": 15.458236490802967
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T11:05:20.874741"
+  },
+  {
+    "text": "chemical spill at 666w harrison",
+    "result": {
+      "detected": true,
+      "disaster_type": "chemical_spill",
+      "confidence": 31.1674461883377,
+      "confidence_level": "low",
+      "severity": 5,
+      "response_types": [
+        "ambulance",
+        "fire",
+        "police"
+      ],
+      "primary_response": "ambulance",
+      "matched_keywords": [],
+      "agreement": "weak",
+      "voting_details": {
+        "chemical_spill": 1.5
+      },
+      "individual_models": {
+        "rule_based": {
+          "detected": false,
+          "confidence": 0
+        },
+        "supervised": {
+          "detected": true,
+          "disaster_type": "chemical_spill",
+          "confidence": 31.1674461883377,
+          "confidence_level": "low",
+          "severity": 5,
+          "response_types": [
+            "ambulance",
+            "fire",
+            "police"
+          ],
+          "primary_response": "ambulance",
+          "response_scores": {
+            "ambulance": 0.7581314887798111,
+            "fire": 0.7706137463123311,
+            "police": 0.5761309196192987
+          },
+          "all_probabilities": {
+            "chemical_spill": 31.1674461883377,
+            "earthquake": 9.103856028930215,
+            "fire": 12.44593730913454,
+            "flood": 9.048113594737197,
+            "medical_emergency": 10.976364254075694,
+            "none": 11.800046133981676,
+            "traffic_collision": 15.458236490802967
+          }
+        },
+        "unsupervised": {
+          "detected": false
+        }
+      }
+    },
+    "timestamp": "2026-03-20T11:05:21.451687"
   }
 ]

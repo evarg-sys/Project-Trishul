@@ -1,162 +1,217 @@
 #!/usr/bin/env python
-"""Comprehensive test of all population model fixes"""
+"""Single-run comprehensive test for world-state + multi-routing dispatch."""
+
+import os
+import sqlite3
 import sys
 from pathlib import Path
-C:\Users\ericg\AppData\Local\Python\pythoncore-3.14-64\python.exe .\backend\manage.py priority_from_text --text "small fire at 410 s morgan st" --text "big fire at 55 n wacker drive few people hurt" --text "earthquake lots of people hurt at 945 W harrison"
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent / 'population'))
 
-from population_model import PopulationDensityModel
+import networkx as nx
 
-print("\n" + "="*80)
-print(" COMPREHENSIVE POPULATION MODEL TEST - Verifying ALL Fixes ".center(80))
-print("="*80)
 
-# TEST 1: CSV Loading with Correct Parsing
-print("\n[TEST 1] CSV Loading with Correct Parsing")
-print("-" * 80)
-try:
-    model = PopulationDensityModel()
-    csv_path = Path(__file__).parent.parent / 'population' / 'chi_pop.csv'
-    
-    print(f"CSV Path: {csv_path}")
-    print(f"CSV Exists: {csv_path.exists()}")
-    
-    model.load_census_data(str(csv_path))
-    
-    assert len(model.census_data) == 59, f"Expected 59 ZIPs, got {len(model.census_data)}"
-    print(f"✓ CSV Loaded: {len(model.census_data)} ZIP codes")
-    
-    # Verify data integrity
-    sample_zip = '60601'
-    assert sample_zip in model.census_data, f"ZIP {sample_zip} not found"
-    assert model.census_data[sample_zip]['total'] == 14804, "Population mismatch"
-    print(f"✓ Data Integrity: ZIP {sample_zip} = 14,804 people (correct)")
-    
-except Exception as e:
-    print(f"✗ FAILED: {e}")
-    sys.exit(1)
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# TEST 2: Cache System
-print("\n[TEST 2] Cache System Initialization")
-print("-" * 80)
-try:
-    assert model.cache_dir.exists(), "Cache directory not created"
-    assert hasattr(model, 'api_cache'), "API cache not initialized"
-    print(f"✓ Cache Directory: {model.cache_dir}")
-    print(f"✓ Cache System: Ready")
-except Exception as e:
-    print(f"✗ FAILED: {e}")
-    sys.exit(1)
+from routing.world_state_dispatch import DispatchCoordinator
+from routing.world_state_dispatch import MultiRoutePlanner
+from routing.world_state_dispatch import WorldStateDB
 
-# TEST 3: Estimate Population Calculation
-print("\n[TEST 3] Population Estimation Calculation")
-print("-" * 80)
-try:
-    test_buildings = {
-        'residential': 500,
-        'apartments': 30,
-        'commercial': 15
-    }
-    area_km2 = 2.0
-    
-    result = model.estimate_population(area_km2, test_buildings)
-    
-    assert result is not None, "Population estimation returned None"
-    assert result['total_population'] > 0, "Population should be > 0"
-    assert result['density'] > 0, "Density should be > 0"
-    assert 'breakdown' in result, "Missing breakdown"
-    
-    print(f"✓ Buildings Input: {sum(test_buildings.values())} buildings")
-    print(f"✓ Estimated Population: {result['total_population']:,}")
-    print(f"✓ Population Density: {result['density']:.2f} people/km²")
-    print(f"✓ Breakdown: {list(result['breakdown'].keys())}")
-    
-except Exception as e:
-    print(f"✗ FAILED: {e}")
-    sys.exit(1)
 
-# TEST 4: Chi Factor Adjustment
-print("\n[TEST 4] Chi Factor Adjustment")
-print("-" * 80)
-try:
-    for chi in [0.8, 1.0, 1.2]:
-        m = PopulationDensityModel(chi_factor=chi)
-        result = m.estimate_population(2.0, {'residential': 100})
-        
-        assert result['total_population'] > 0, f"Failed for chi={chi}"
-        print(f"  chi={chi}: Population = {result['total_population']}")
-    
-    print(f"✓ Chi Factor Scaling: Working correctly")
-    
-except Exception as e:
-    print(f"✗ FAILED: {e}")
-    sys.exit(1)
+def _build_demo_graph() -> nx.Graph:
+    graph = nx.Graph()
+    edges = [
+        ("S1", "A", 1.2),
+        ("A", "B", 1.8),
+        ("B", "I1", 1.1),
+        ("S1", "C", 2.0),
+        ("C", "D", 1.5),
+        ("D", "I1", 0.9),
+        ("S2", "E", 1.0),
+        ("E", "B", 1.2),
+        ("S2", "F", 1.6),
+        ("F", "D", 0.8),
+        ("B", "I2", 1.4),
+        ("D", "I2", 1.1),
+        ("E", "I2", 2.1),
+        ("A", "I2", 2.3),
+    ]
+    for u, v, dist in edges:
+        graph.add_edge(u, v, distance_km=dist)
+    return graph
 
-# TEST 5: File Path Resolution
-print("\n[TEST 5] File Path Resolution (Relative to Module)")
-print("-" * 80)
-try:
-    # Create new model and test file path resolution
-    m2 = PopulationDensityModel()
-    
-    # Test with relative path
-    csv_path = 'chi_pop.csv'
-    m2.load_census_data(csv_path)
-    
-    assert len(m2.census_data) == 59, "Relative path resolution failed"
-    print(f"✓ Relative Path: Resolved correctly")
-    print(f"✓ Loaded: {len(m2.census_data)} ZIP codes")
-    
-except Exception as e:
-    print(f"✗ FAILED: {e}")
-    sys.exit(1)
 
-# TEST 6: Data Integrity Check
-print("\n[TEST 6] Data Integrity Check")
-print("-" * 80)
-try:
-    sample_data = {
-        '60601': 14804,
-        '60602': 1142,
-        '60603': 1275,
-        '60605': 32077
-    }
-    
-    for zip_code, expected_pop in sample_data.items():
-        actual = model.census_data[zip_code]['total']
-        assert actual == expected_pop, f"ZIP {zip_code}: expected {expected_pop}, got {actual}"
-    
-    print(f"✓ Sample ZIP codes: All verified")
-    for zip_code in sample_data.keys():
-        pop = model.census_data[zip_code]['total']
-        print(f"  {zip_code}: {pop:,} people")
-    
-except Exception as e:
-    print(f"✗ FAILED: {e}")
-    sys.exit(1)
+def _print_snapshot(title: str, snapshot: dict) -> None:
+    print(f"\n{title}")
+    print("-" * 80)
+    print(f"Clock minute: {snapshot['clock_minute']}")
+    print("Station inventory:")
+    for station, units in snapshot["stations"].items():
+        truck = units.get("truck", {"available": 0, "total": 0})
+        amb = units.get("ambulance", {"available": 0, "total": 0})
+        car = units.get("car", {"available": 0, "total": 0})
+        print(
+            f"  {station} | trucks {truck['available']}/{truck['total']} | "
+            f"ambulances {amb['available']}/{amb['total']} | cars {car['available']}/{car['total']}"
+        )
 
-# FINAL SUMMARY
-print("\n" + "="*80)
-print(" ✓ ALL TESTS PASSED ".center(80, "="))
-print("="*80)
+    print("Active dispatches:")
+    if not snapshot["active_dispatches"]:
+        print("  (none)")
+    else:
+        for d in snapshot["active_dispatches"]:
+            print(
+                f"  #{d['id']} {d['unit_type']} from {d['station_name']} "
+                f"[{d['source_kind']}] status={d['status']} rem={d['remaining_minutes']:.1f}m "
+                f"route={d['route_name']} incident={d['incident_id']}"
+            )
 
-print("\n📊 SUMMARY OF FIXES:")
-print("  ✓ CSV Parsing: From tab-delimited (broken) → proper CSV parsing")
-print("  ✓ Import Paths: Fixed module discovery from test directory")
-print("  ✓ File Paths: Dynamic path resolution relative to module")
-print("  ✓ Caching: APIresponses cached - 30x+ performance improvement")
-print("  ✓ Error Handling: Robust missing field handling")
-print("  ✓ Data Integrity: 59 Chicago ZIP codes with verified demographics")
 
-print("\n📁 KEY FILES MODIFIED:")
-print("  • ml_research/population/population_model.py")
-print("  • backend/api/ml/population_model.py")
-print("  • ml_research/tests/test_population_model.py")
+def run_single_comprehensive_test() -> None:
+    print("\n" + "=" * 88)
+    print(" WORLD STATE + MULTI ROUTING + LIVE DISPATCH TEST ".center(88))
+    print("=" * 88)
 
-print("\n🚀 READY FOR INTEGRATION WITH:")
-print("  • Distance Model")
-print("  • Constraints Model")
-print("  • Dispatch Engine")
+    db_file = Path(__file__).parent / "world_state_test.sqlite3"
+    if db_file.exists():
+        db_file.unlink()
 
-print("\n" + "="*80 + "\n")
+    world = WorldStateDB(str(db_file))
+    try:
+        print("\n[STEP 1] Build world state database")
+        world.upsert_station("Central", trucks=3, ambulances=2, cars=4)
+        world.upsert_station("North", trucks=3, ambulances=2, cars=3)
+        world.upsert_station("South", trucks=2, ambulances=1, cars=2)
+
+        initial = world.get_live_snapshot()
+        _print_snapshot("Initial world-state", initial)
+
+        print("\n[STEP 2] Build multi-route catalog")
+        graph = _build_demo_graph()
+        planner = MultiRoutePlanner(graph)
+        station_nodes = {"Central": "S1", "North": "S2", "South": "C"}
+
+        incident_1_truck_routes = planner.build_route_catalog(
+            station_nodes=station_nodes,
+            incident_node="I1",
+            unit_type="truck",
+            top_k_per_station=2,
+            speed_kmph=35,
+        )
+        incident_1_amb_routes = planner.build_route_catalog(
+            station_nodes=station_nodes,
+            incident_node="I1",
+            unit_type="ambulance",
+            top_k_per_station=2,
+            speed_kmph=45,
+        )
+
+        assert len(incident_1_truck_routes) >= 3, "Expected multiple truck routes"
+        assert len(incident_1_amb_routes) >= 3, "Expected multiple ambulance routes"
+
+        print(f"  truck routes generated: {len(incident_1_truck_routes)}")
+        print(f"  ambulance routes generated: {len(incident_1_amb_routes)}")
+        print("  top truck options:")
+        for route in incident_1_truck_routes[:4]:
+            print(
+                f"    {route.route_name} | {route.distance_km:.2f} km | "
+                f"ETA {route.travel_minutes:.2f} min"
+            )
+
+        print("\n[STEP 3] Dispatch incident I1 with multiple units")
+        coordinator = DispatchCoordinator(world)
+        i1_orders = coordinator.dispatch_incident(
+            incident_id="I1",
+            requirements={"truck": 2, "ambulance": 1},
+            route_catalog={
+                "truck": incident_1_truck_routes,
+                "ambulance": incident_1_amb_routes,
+            },
+            on_scene_minutes=10,
+        )
+        print(f"  dispatch count: {len(i1_orders)}")
+        for order in i1_orders:
+            print(
+                f"    dispatch #{order['dispatch_id']} | {order['unit_type']} | "
+                f"source={order['source']} | station={order['station_name']} | "
+                f"route={order['route_name']}"
+            )
+
+        snap_after_i1 = world.get_live_snapshot()
+        _print_snapshot("After I1 dispatch", snap_after_i1)
+
+        print("\n[STEP 4] Advance time so units are in returning phase")
+        world.advance_time(15)
+        mid_snap = world.get_live_snapshot()
+        _print_snapshot("After +15 minutes", mid_snap)
+
+        print("\n[STEP 5] Dispatch incident I2 and allow returning-unit diversion")
+        incident_2_truck_routes = planner.build_route_catalog(
+            station_nodes=station_nodes,
+            incident_node="I2",
+            unit_type="truck",
+            top_k_per_station=2,
+            speed_kmph=35,
+        )
+        incident_2_amb_routes = planner.build_route_catalog(
+            station_nodes=station_nodes,
+            incident_node="I2",
+            unit_type="ambulance",
+            top_k_per_station=2,
+            speed_kmph=45,
+        )
+
+        i2_orders = coordinator.dispatch_incident(
+            incident_id="I2",
+            requirements={"truck": 1, "ambulance": 1},
+            route_catalog={
+                "truck": incident_2_truck_routes,
+                "ambulance": incident_2_amb_routes,
+            },
+            on_scene_minutes=8,
+        )
+
+        diverted_count = sum(1 for o in i2_orders if o["source"] == "returning_unit")
+        print(f"  dispatch count: {len(i2_orders)}")
+        print(f"  diverted returning units: {diverted_count}")
+        for order in i2_orders:
+            print(
+                f"    dispatch #{order['dispatch_id']} | {order['unit_type']} | "
+                f"source={order['source']} | station={order['station_name']} | "
+                f"route={order['route_name']}"
+            )
+
+        assert len(i2_orders) == 2, "I2 should dispatch one truck and one ambulance"
+        assert diverted_count >= 1, "Expected at least one diverted returning unit"
+
+        print("\n[STEP 6] Record outcome feedback and finish timeline")
+        world.record_feedback("I1", "truck", predicted_units=2, actual_units=3)
+        world.record_feedback("I2", "ambulance", predicted_units=1, actual_units=1)
+        world.advance_time(40)
+
+        final_snap = world.get_live_snapshot()
+        _print_snapshot("Final state", final_snap)
+
+        assert len(final_snap["active_dispatches"]) == 0, "All units should be back by end"
+        assert final_snap["stations"]["Central"]["truck"]["available"] <= final_snap["stations"]["Central"]["truck"]["total"]
+
+        conn = sqlite3.connect(str(db_file))
+        try:
+            feedback_rows = conn.execute("SELECT COUNT(*) FROM feedback_events").fetchone()[0]
+            assert feedback_rows == 2, "Expected 2 feedback events"
+            print(f"  feedback records: {feedback_rows}")
+        finally:
+            conn.close()
+
+        print("\n" + "=" * 88)
+        print(" TEST PASSED: world state, multi-routing, live dispatch, return diversion ")
+        print("=" * 88 + "\n")
+
+    finally:
+        world.close()
+
+
+if __name__ == "__main__":
+    try:
+        run_single_comprehensive_test()
+    except Exception as exc:
+        print(f"\nTEST FAILED: {exc}")
+        raise
