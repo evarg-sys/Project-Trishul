@@ -1,4 +1,5 @@
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, Marker, Tooltip } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect } from "react";
 import "./App.css";
@@ -26,6 +27,93 @@ const INCIDENT_DETAIL_LABELS = {
   ambulances:  "Ambulances Ready?",
   weather:     "Weather Constraints?",
 };
+
+// ── Dummy station pins ─────────────────────────────────────────
+const DUMMY_STATIONS = [
+  {
+    id: 1,
+    name: "Station Alpha — Loop",
+    lat: 41.8827, lng: -87.6233,
+    fireTrucks: 4, ambulances: 3, others: 2,
+  },
+  {
+    id: 2,
+    name: "Station Bravo — Lincoln Park",
+    lat: 41.9214, lng: -87.6513,
+    fireTrucks: 2, ambulances: 5, others: 1,
+  },
+  {
+    id: 3,
+    name: "Station Charlie — Hyde Park",
+    lat: 41.7943, lng: -87.5907,
+    fireTrucks: 3, ambulances: 2, others: 4,
+  },
+  {
+    id: 4,
+    name: "Station Delta — Wicker Park",
+    lat: 41.9088, lng: -87.6789,
+    fireTrucks: 5, ambulances: 4, others: 2,
+  },
+  {
+    id: 5,
+    name: "Station Echo — Pilsen",
+    lat: 41.8556, lng: -87.6594,
+    fireTrucks: 2, ambulances: 3, others: 3,
+  },
+  {
+    id: 6,
+    name: "Station Foxtrot — Uptown",
+    lat: 41.9645, lng: -87.6527,
+    fireTrucks: 3, ambulances: 2, others: 1,
+  },
+];
+
+// Custom pin icon — inline styles so Leaflet's isolated DOM always renders them
+const createStationIcon = () =>
+  L.divIcon({
+    className: "",
+    html: `
+      <div style="
+        position: relative;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <!-- Outer pulse ring -->
+        <div style="
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          border: 1.5px solid rgba(80,160,255,0.5);
+          animation: pinPulse 2.4s ease-out infinite;
+          pointer-events: none;
+        "></div>
+        <!-- Inner dot -->
+        <div style="
+          width: 9px;
+          height: 9px;
+          border-radius: 50%;
+          background: #60a8ff;
+          box-shadow: 0 0 0 2px rgba(80,160,255,0.25), 0 0 10px rgba(80,160,255,0.7);
+          position: relative;
+          z-index: 2;
+          flex-shrink: 0;
+        "></div>
+        <style>
+          @keyframes pinPulse {
+            0%   { transform: scale(1);   opacity: 0.9; }
+            70%  { transform: scale(2.6); opacity: 0;   }
+            100% { transform: scale(2.6); opacity: 0;   }
+          }
+        </style>
+      </div>
+    `,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+    tooltipAnchor: [16, 0],
+  });
 
 // ── Title Page Option Configs ──────────────────────────────────
 const TITLE_OPTIONS = [
@@ -59,14 +147,13 @@ const TITLE_OPTIONS = [
 export default function App() {
   // ── Title page ────────────────────────────────────────────────
   const [showTitlePage,   setShowTitlePage]   = useState(true);
-  const [selectedOption,  setSelectedOption]  = useState(null); // "loc-desc" | "parsed" | "loc-desc-coords"
+  const [selectedOption,  setSelectedOption]  = useState(null);
   const [titleFields,     setTitleFields]     = useState({
     location: "", description: "", parsedText: "", latitude: "", longitude: "",
   });
 
   const updateTitleField = (key, val) =>
     setTitleFields(prev => ({ ...prev, [key]: val }));
-
   const handleTitleEnter = () => setShowTitlePage(false);
 
   // ── Core state ────────────────────────────────────────────────
@@ -94,9 +181,11 @@ export default function App() {
   const [feasibilityData, setFeasibilityData] = useState("");
   const [ambulanceData,   setAmbulanceData]   = useState("");
   const [weatherData,     setWeatherData]     = useState("");
+
   const [activeDisasters,   setActiveDisasters]   = useState([]);
   const [resolvedDisasters, setResolvedDisasters] = useState([]);
   const [fireStations,      setFireStations]      = useState([]);
+
   const [submitting,  setSubmitting]  = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [analysisResult, setAnalysisResult] = useState(null);
@@ -116,12 +205,10 @@ export default function App() {
     try   { const r = await getActiveDisasters(); setActiveDisasters(r.data); }
     catch  { console.error("Failed to fetch active disasters"); }
   };
-
   const fetchResolvedDisasters = async () => {
     try   { const r = await axios.get(`${API_BASE_URL}/disasters/resolved/`); setResolvedDisasters(r.data); }
     catch  { console.error("Failed to fetch resolved disasters"); }
   };
-
   const fetchFireStations = async () => {
     try   { const r = await getFireStations(); setFireStations(r.data); }
     catch  { console.error("Failed to fetch fire stations"); }
@@ -168,21 +255,21 @@ export default function App() {
 
   const resetDraft = () => { setDraft({ location: "", description: "", predicted: "" }); setSubmitError(""); };
   const updateDraft = (field, value) => { setDraft({ ...draft, [field]: value }); setSaved(false); };
+
   const onEachCountry = (feature, layer) =>
     layer.on({ click: () => { setSelected(feature.properties.name); setView("country"); } });
+
+  const stationIcon = createStationIcon();
 
   // ── TITLE PAGE ────────────────────────────────────────────────
   if (showTitlePage) {
     const activeOption = TITLE_OPTIONS.find(o => o.id === selectedOption);
-
     return (
       <div className="title-page">
         <div className="title-page-inner">
           <h1 className="title-page-heading">
             Disaster Response<br />Planning System
           </h1>
-
-          {/* Option selector cards */}
           {!selectedOption && (
             <div className="title-option-grid">
               {TITLE_OPTIONS.map((opt, i) => (
@@ -204,8 +291,6 @@ export default function App() {
               </div>
             </div>
           )}
-
-          {/* Selected option — input fields */}
           {selectedOption && activeOption && (
             <div className="title-card glass" style={{ width: "100%" }}>
               <div className="title-option-back-row">
@@ -213,9 +298,7 @@ export default function App() {
                   ← Back
                 </button>
               </div>
-
               <p className="title-option-selected-label">{activeOption.label}</p>
-
               {activeOption.fields.map(f => (
                 <div key={f.key}>
                   <label className="title-label">{f.label}</label>
@@ -239,7 +322,6 @@ export default function App() {
                   )}
                 </div>
               ))}
-
               <button className="title-enter-btn" onClick={handleTitleEnter}>
                 Enter System →
               </button>
@@ -260,6 +342,39 @@ export default function App() {
         <MapContainer center={CHICAGO_CENTER} zoom={CHICAGO_ZOOM} style={{ height: "100%", width: "100%" }}>
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
           <GeoJSON data={countriesData} onEachFeature={onEachCountry} />
+
+          {/* ── Dummy station pins ── */}
+          {DUMMY_STATIONS.map(station => (
+            <Marker
+              key={station.id}
+              position={[station.lat, station.lng]}
+              icon={stationIcon}
+            >
+              <Tooltip
+                direction="right"
+                offset={[14, 0]}
+                opacity={1}
+                className="station-tooltip"
+              >
+                <div className="station-tooltip-inner">
+                  <div className="station-tooltip-name">{station.name}</div>
+                  <div className="station-tooltip-divider" />
+                  <div className="station-tooltip-row">
+                    <span className="station-tooltip-icon">🚒</span>
+                    <span className="station-tooltip-label">Fire Trucks: {station.fireTrucks}</span>
+                  </div>
+                  <div className="station-tooltip-row">
+                    <span className="station-tooltip-icon">🚑</span>
+                    <span className="station-tooltip-label">Ambulances: {station.ambulances}</span>
+                  </div>
+                  <div className="station-tooltip-row">
+                    <span className="station-tooltip-icon">🚧</span>
+                    <span className="station-tooltip-label">Other Services: {station.others}</span>
+                  </div>
+                </div>
+              </Tooltip>
+            </Marker>
+          ))}
         </MapContainer>
       </div>
 
