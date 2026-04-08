@@ -7,6 +7,17 @@
 * check planned milestones
 * review next steps
 
+### April 3 Meeting
+* Abhijith:
+  * will work on pin drop for location
+  * UI updates: dispatch routing and resources tab
+* Eric
+  * add all firestations and hospitals
+  * work on report
+* Deepikka
+  * check zoom-in functionality
+  * continue backend integration
+  * work on report
 
 ### March 13 Meeting
 * Eric:
