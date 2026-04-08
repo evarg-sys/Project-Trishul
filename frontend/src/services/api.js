@@ -50,3 +50,12 @@ export const resolveDisaster = (id, resolutionNotes) => {
     resolution_notes: resolutionNotes
   });
 };
+
+export const getDispatchDecisions = (disasterId) =>
+  axios.get(`${API_BASE_URL}/disasters/${disasterId}/dispatch/`);
+
+export const getAnalytics = () =>
+  axios.get(`${API_BASE_URL}/analytics/`);
+
+export const getHospitals = () =>
+  axios.get(`${API_BASE_URL}/hospitals/`);
