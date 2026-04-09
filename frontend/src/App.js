@@ -124,6 +124,7 @@ export default function App() {
   const [titleMode,       setTitleMode]       = useState(null); // "type" | "map"
   const [titleLocation,   setTitleLocation]   = useState("");
   const [titleDesc,       setTitleDesc]       = useState("");
+  const [titleType,       setTitleType]       = useState("fire");
   const [titlePin,        setTitlePin]        = useState(null); // {lat, lng}
   const [titleError,      setTitleError]      = useState("");
   const [titleSubmitting, setTitleSubmitting] = useState(false);
@@ -171,6 +172,43 @@ export default function App() {
   const [lastIncidentCoords, setLastIncidentCoords] = useState(null);
   const [incidentListPage, setIncidentListPage] = useState(0);
   const INCIDENTS_PER_PAGE = 10; // persists pin on map
+const DISASTER_TYPES = [
+  { value: "fire",        label: "🔥 Fire",        color: "#e63946" },
+  { value: "flood",       label: "🌊 Flood",       color: "#1d7aff" },
+  { value: "earthquake",  label: "🏚️ Earthquake",  color: "#ff9500" },
+  { value: "chemical",    label: "☣️ Chemical",    color: "#8b5cf6" },
+  { value: "medical",     label: "🚑 Medical",     color: "#3ecf72" },
+  { value: "traffic",     label: "🚗 Traffic Accident",     color: "#f59e0b" },
+];
+
+function DisasterTypeButtons({ value, onChange }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+      {DISASTER_TYPES.map(t => (
+        <button
+          key={t.value}
+          onClick={() => onChange(t.value)}
+          style={{
+            padding: "6px 12px",
+            fontSize: "0.72rem",
+            letterSpacing: "0.04em",
+            borderRadius: "20px",
+            border: `1.5px solid ${value === t.value ? t.color : "var(--border)"}`,
+            background: value === t.value ? `${t.color}22` : "rgba(0,0,0,0.2)",
+            color: value === t.value ? t.color : "var(--text-dim)",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+            fontFamily: "var(--font-mono)",
+          }}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+
 
   useEffect(() => {
     if (view === "incidents") fetchActiveDisasters();
@@ -213,7 +251,7 @@ export default function App() {
     setDispatchData([]);
     try {
       const payload = {
-        disaster_type: "fire",
+        disaster_type: titleType || "fire",
         address:       location || `${titlePin.lat.toFixed(5)}, ${titlePin.lng.toFixed(5)}`,
         description:   description,
       };
@@ -426,6 +464,8 @@ export default function App() {
                 value={titleDesc}
                 onChange={e => setTitleDesc(e.target.value)}
               />
+              <label className="title-label" style={{ marginTop: "12px" }}>Incident Type</label>
+              <DisasterTypeButtons value={titleType} onChange={setTitleType} />
               {titleError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{titleError}</p>}
               <button className="title-enter-btn" onClick={handleTitleSubmit} disabled={titleSubmitting}>
                 {titleSubmitting ? "Submitting…" : "Report Incident →"}
@@ -446,7 +486,7 @@ export default function App() {
               {/* Inline map */}
               <div style={{ height: "320px", borderRadius: "8px", overflow: "hidden", marginBottom: "14px", border: "1px solid var(--border)" }}>
                 <MapContainer center={CHICAGO_CENTER} zoom={11} style={{ height: "100%", width: "100%" }}>
-                  <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO"/>
+                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
                   <MapClickHandler onMapClick={handleMapClick} />
                   {titlePin && (
                     <Marker position={[titlePin.lat, titlePin.lng]} icon={pinIcon}>
@@ -473,6 +513,8 @@ export default function App() {
                 value={titleDesc}
                 onChange={e => setTitleDesc(e.target.value)}
               />
+              <label className="title-label" style={{ marginTop: "12px" }}>Incident Type</label>
+              <DisasterTypeButtons value={titleType} onChange={setTitleType} />
               {titleError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{titleError}</p>}
               <button className="title-enter-btn" onClick={handleTitleSubmit} disabled={titleSubmitting}>
                 {titleSubmitting ? "Submitting…" : "Report Incident →"}
@@ -673,9 +715,8 @@ export default function App() {
                   <label>Description</label>
                   <textarea value={draft.description} onChange={e => updateDraft("description", e.target.value)}
                     placeholder="Describe the incident…" rows={3} style={{ marginTop: "0", resize: "vertical" }} />
-                  <label>Predicted Type</label>
-                  <input value={draft.predicted} onChange={e => updateDraft("predicted", e.target.value)}
-                    placeholder="fire / flood / earthquake" />
+                  <label>Incident Type</label>
+                  <DisasterTypeButtons value={draft.predicted || "fire"} onChange={v => updateDraft("predicted", v)} />
                   {submitError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{submitError}</p>}
                   <div className="form-buttons">
                     <button onClick={handleSubmit} disabled={submitting}>
@@ -711,9 +752,8 @@ export default function App() {
                   <label>Description</label>
                   <textarea value={draft.description} onChange={e => updateDraft("description", e.target.value)}
                     placeholder="Describe the incident…" rows={2} style={{ marginTop: "0", resize: "vertical" }} />
-                  <label>Predicted Type</label>
-                  <input value={draft.predicted} onChange={e => updateDraft("predicted", e.target.value)}
-                    placeholder="fire / flood / earthquake" />
+                  <label>Incident Type</label>
+                  <DisasterTypeButtons value={draft.predicted || "fire"} onChange={v => updateDraft("predicted", v)} />
                   {submitError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{submitError}</p>}
                   <div className="form-buttons">
                     <button onClick={handleSubmit} disabled={submitting}>
