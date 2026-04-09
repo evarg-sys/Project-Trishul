@@ -3,9 +3,36 @@ from .models import Disaster, FireStation, Hospital, DispatchDecision
 import sys
 import os
 import logging
+import math
 from .ml.incident_analysis import analyze_and_plan_incident
 
 logger = logging.getLogger(__name__)
+
+# ── Cached road network (persists across Celery tasks in same worker process)
+_router_cache = None
+
+def _get_router():
+    """Return a cached DisasterRouting instance, loading network only once per worker."""
+    global _router_cache
+    if _router_cache is not None and _router_cache.graph is not None:
+        logger.warning("🗺️ Using cached road network")
+        return _router_cache
+    sys.path.append(os.path.join(os.path.dirname(__file__), 'ml'))
+    from disaster_routing import DisasterRouting
+    logger.warning("🗺️ Loading road network for dispatch...")
+    router = DisasterRouting(city="Chicago, Illinois, USA")
+    router.load_network()
+    _router_cache = router
+    return router
+
+
+def _haversine_km(lat1, lon1, lat2, lon2):
+    """Straight-line distance in km between two lat/lng points."""
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
 
 
 @shared_task
@@ -103,11 +130,7 @@ def analyze_disaster(disaster_id):
         except Exception as e:
             logger.warning(f"❌ Priority calculation error: {e}")
 
-        # ── Step 6: Mark as analyzed ──────────────────────────────────────
-        disaster.status = 'analyzed'
-        disaster.save()
-
-        # ── Step 7: OSM routing dispatch (runs after save so UI can update)
+        # ── Step 6: OSM routing dispatch ──────────────────────────────────
         if disaster.latitude and disaster.longitude:
             try:
                 _run_dispatch(disaster)
@@ -115,6 +138,10 @@ def analyze_disaster(disaster_id):
                 logger.warning(f"❌ Dispatch error: {e}")
         else:
             logger.warning("⚠️ Skipping dispatch - no coordinates available")
+
+        # ── Step 7: Mark as analyzed (after dispatch so UI updates together)
+        disaster.status = 'analyzed'
+        disaster.save()
 
         return {'success': True, 'disaster_id': disaster_id}
 
@@ -125,116 +152,145 @@ def analyze_disaster(disaster_id):
 
 def _run_dispatch(disaster):
     """
-    Run OSM routing and create DispatchDecision records.
-    Discovers fire stations and hospitals dynamically from OSM.
-    Runs after status=analyzed so a routing failure never blocks the pipeline.
+    Run road routing and create DispatchDecision records.
+    Uses cached road network + pre-filters by straight-line distance
+    to only route the closest N candidates instead of all 100+.
     """
-    sys.path.append(os.path.join(os.path.dirname(__file__), 'ml'))
-    from disaster_routing import DisasterRouting
-
     disaster_coords = (disaster.latitude, disaster.longitude)
+    CANDIDATES = 8  # only route closest N by straight-line distance
 
-    logger.warning("🗺️ Loading road network for dispatch...")
-    router = DisasterRouting(city="Chicago, Illinois, USA")
-    router.load_network()
-
-    # ── Fire station dispatch (OSM-based discovery) ───────────────────────
     try:
-        fire_routes = router.generate_fire_routes(disaster_coords)
+        router = _get_router()
+    except Exception as e:
+        logger.warning(f"❌ Failed to load road network: {e}")
+        return
 
-        if fire_routes:
-            best_fire = fire_routes[0]
-            distance_km = best_fire['distance_km']
-            eta_minutes = round((distance_km / 30) * 60 + 2, 1)
-
-            station_obj, _ = FireStation.objects.get_or_create(
-                name=best_fire['station_name'],
-                defaults={
-                    'address': best_fire['station_name'],
-                    'latitude': best_fire['coords'][0],
-                    'longitude': best_fire['coords'][1],
-                    'available_trucks': 3,
-                    'operational': True,
-                }
-            )
-
-            # Convert route_nodes to lat/lng for frontend rendering
-            route_coords = []
-            try:
-                route_coords = [
-                    [router.graph.nodes[n]['y'], router.graph.nodes[n]['x']]
-                    for n in best_fire.get('route_nodes', [])
-                ]
-            except Exception:
-                pass
-
-            DispatchDecision.objects.create(
-                disaster=disaster,
-                dispatch_type='fire',
-                fire_station=station_obj,
-                distance_km=distance_km,
-                estimated_arrival_minutes=eta_minutes,
-                route_data={
-                    'route_coords': route_coords,
-                    'source': 'disaster_routing',
-                },
-            )
-            logger.warning(
-                f"✅ Fire dispatch: {best_fire['station_name']} | "
-                f"{distance_km:.2f} km | ETA {eta_minutes} min"
-            )
+    # ── Fire station dispatch ─────────────────────────────────────────────
+    try:
+        stations = list(FireStation.objects.filter(operational=True))
+        if not stations:
+            logger.warning("⚠️ No operational fire stations in DB — run seed_chicago_resources")
         else:
-            logger.warning("⚠️ No fire stations found near incident")
+            # Pre-filter: sort by straight-line distance, keep closest N
+            stations_sorted = sorted(
+                stations,
+                key=lambda s: _haversine_km(disaster.latitude, disaster.longitude, s.latitude, s.longitude)
+            )
+            candidates = stations_sorted[:CANDIDATES]
+            logger.warning(f"🚒 Routing {len(candidates)} nearest fire stations (of {len(stations)} total)")
+
+            best_fire = None
+            best_fire_dist = float('inf')
+            best_fire_route = None
+
+            for station in candidates:
+                try:
+                    route = router.find_shortest_route(
+                        (station.latitude, station.longitude),
+                        disaster_coords
+                    )
+                    if route['success'] and route['distance'] < best_fire_dist:
+                        best_fire_dist = route['distance']
+                        best_fire = station
+                        best_fire_route = route
+                except Exception:
+                    continue
+
+            if best_fire and best_fire_route:
+                distance_km = best_fire_dist / 1000
+                eta_minutes = round((distance_km / 30) * 60 + 2, 1)
+
+                route_coords = []
+                try:
+                    route_coords = [
+                        [router.graph.nodes[n]['y'], router.graph.nodes[n]['x']]
+                        for n in best_fire_route.get('route_nodes', [])
+                    ]
+                except Exception:
+                    pass
+
+                DispatchDecision.objects.create(
+                    disaster=disaster,
+                    dispatch_type='fire',
+                    fire_station=best_fire,
+                    distance_km=distance_km,
+                    estimated_arrival_minutes=eta_minutes,
+                    route_data={
+                        'route_coords': route_coords,
+                        'source': 'db_routing',
+                    },
+                )
+                logger.warning(
+                    f"✅ Fire dispatch: {best_fire.name} | "
+                    f"{distance_km:.2f} km | ETA {eta_minutes} min"
+                )
+            else:
+                logger.warning("⚠️ No reachable fire station found")
 
     except Exception as e:
         logger.warning(f"❌ Fire dispatch error: {e}")
 
-    # ── Ambulance dispatch (OSM-based discovery) ──────────────────────────
+    # ── Ambulance dispatch ────────────────────────────────────────────────
     try:
-        ambulance_routes = router.generate_ambulance_routes(disaster_coords)
-
-        if ambulance_routes:
-            best_amb = ambulance_routes[0]
-            distance_km = best_amb['distance_km']
-            eta_minutes = round((distance_km / 36) * 60 + 2, 1)
-
-            hospital_obj, _ = Hospital.objects.get_or_create(
-                name=best_amb['station_name'],
-                defaults={
-                    'latitude': best_amb['coords'][0],
-                    'longitude': best_amb['coords'][1],
-                    'available_ambulances': 5,
-                    'operational': True,
-                }
-            )
-
-            # Convert route_nodes to lat/lng for frontend rendering
-            route_coords = []
-            try:
-                route_coords = [
-                    [router.graph.nodes[n]['y'], router.graph.nodes[n]['x']]
-                    for n in best_amb.get('route_nodes', [])
-                ]
-            except Exception:
-                pass
-
-            DispatchDecision.objects.create(
-                disaster=disaster,
-                dispatch_type='ambulance',
-                hospital=hospital_obj,
-                distance_km=distance_km,
-                estimated_arrival_minutes=eta_minutes,
-                route_data={
-                    'route_coords': route_coords,
-                    'source': 'disaster_routing',
-                },
-            )
-            logger.warning(
-                f"✅ Ambulance dispatch: {best_amb['station_name']} | "
-                f"{distance_km:.2f} km | ETA {eta_minutes} min"
-            )
+        hospitals = list(Hospital.objects.filter(operational=True))
+        if not hospitals:
+            logger.warning("⚠️ No operational hospitals in DB — run seed_chicago_resources")
         else:
-            logger.warning("⚠️ No ambulance routes found")
+            # Pre-filter: sort by straight-line distance, keep closest N
+            hospitals_sorted = sorted(
+                hospitals,
+                key=lambda h: _haversine_km(disaster.latitude, disaster.longitude, h.latitude, h.longitude)
+            )
+            candidates = hospitals_sorted[:CANDIDATES]
+            logger.warning(f"🏥 Routing {len(candidates)} nearest hospitals (of {len(hospitals)} total)")
+
+            best_hosp = None
+            best_hosp_dist = float('inf')
+            best_hosp_route = None
+
+            for hospital in candidates:
+                try:
+                    route = router.find_shortest_route(
+                        (hospital.latitude, hospital.longitude),
+                        disaster_coords
+                    )
+                    if route['success'] and route['distance'] < best_hosp_dist:
+                        best_hosp_dist = route['distance']
+                        best_hosp = hospital
+                        best_hosp_route = route
+                except Exception:
+                    continue
+
+            if best_hosp and best_hosp_route:
+                distance_km = best_hosp_dist / 1000
+                eta_minutes = round((distance_km / 36) * 60 + 2, 1)
+
+                route_coords = []
+                try:
+                    route_coords = [
+                        [router.graph.nodes[n]['y'], router.graph.nodes[n]['x']]
+                        for n in best_hosp_route.get('route_nodes', [])
+                    ]
+                except Exception:
+                    pass
+
+                DispatchDecision.objects.create(
+                    disaster=disaster,
+                    dispatch_type='ambulance',
+                    hospital=best_hosp,
+                    distance_km=distance_km,
+                    estimated_arrival_minutes=eta_minutes,
+                    route_data={
+                        'route_coords': route_coords,
+                        'source': 'db_routing',
+                    },
+                )
+                logger.warning(
+                    f"✅ Ambulance dispatch: {best_hosp.name} | "
+                    f"{distance_km:.2f} km | ETA {eta_minutes} min"
+                )
+            else:
+                logger.warning("⚠️ No reachable hospital found")
 
     except Exception as e:
         logger.warning(f"❌ Ambulance dispatch error: {e}")

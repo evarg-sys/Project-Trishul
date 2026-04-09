@@ -19,27 +19,29 @@ L.Icon.Default.mergeOptions({
 
 const incidentIcon = new L.DivIcon({
   className: "",
-  html: `<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,180,50,0.25);
-    border:2px solid #ffb432;display:flex;align-items:center;justify-content:center;
-    font-size:18px;">⚠️</div>`,
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
+  html: `<div style="width:42px;height:42px;border-radius:50%;background:rgba(255,200,0,0.9);
+    border:3px solid #ff9500;display:flex;align-items:center;justify-content:center;
+    font-size:22px;box-shadow:0 0 16px rgba(255,180,0,0.7);">⚠️</div>`,
+  iconSize: [42, 42],
+  iconAnchor: [21, 21],
 });
 
 const fireIcon = new L.DivIcon({
   className: "",
-  html: `<div style="width:32px;height:32px;border-radius:50%;background:rgba(224,82,82,0.8);
-    border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:16px;">🚒</div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
+  html: `<div style="width:38px;height:38px;border-radius:50%;background:#e63946;
+    border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:18px;
+    box-shadow:0 2px 8px rgba(230,57,70,0.6);">🚒</div>`,
+  iconSize: [38, 38],
+  iconAnchor: [19, 19],
 });
 
 const hospitalIcon = new L.DivIcon({
   className: "",
-  html: `<div style="width:32px;height:32px;border-radius:50%;background:rgba(80,160,255,0.8);
-    border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:16px;">🏥</div>`,
-  iconSize: [32, 32],
-  iconAnchor: [16, 16],
+  html: `<div style="width:38px;height:38px;border-radius:50%;background:#1d7aff;
+    border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:18px;
+    box-shadow:0 2px 8px rgba(29,122,255,0.6);">🏥</div>`,
+  iconSize: [38, 38],
+  iconAnchor: [19, 19],
 });
 
 // Auto-pan map to incident location
@@ -233,11 +235,7 @@ export default function App() {
           if (disaster.latitude && disaster.longitude) {
             setLastIncidentCoords([disaster.latitude, disaster.longitude]);
           }
-          setTimeout(() => {
-            getDispatchDecisions(disaster.id)
-              .then(res => setDispatchData(res.data.decisions || []))
-              .catch(err => console.error("Dispatch fetch error:", err));
-          }, 2000);
+          pollDispatchDecisions(disaster.id);
         }
       });
     } catch (err) {
@@ -245,6 +243,31 @@ export default function App() {
     } finally {
       setTitleSubmitting(false);
     }
+  };
+
+  // Poll dispatch decisions until both fire and ambulance records exist (max 3 minutes)
+  const pollDispatchDecisions = (disasterId, maxAttempts = 36) => {
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await getDispatchDecisions(disasterId);
+        const decisions = res.data.decisions || [];
+        const hasFire = decisions.some(d => d.dispatch_type === "fire");
+        const hasAmbulance = decisions.some(d => d.dispatch_type === "ambulance");
+        // Update UI as soon as we have anything, but keep polling until both arrive
+        if (decisions.length > 0) {
+          setDispatchData(decisions);
+        }
+        if ((hasFire && hasAmbulance) || attempts >= maxAttempts) {
+          clearInterval(interval);
+        }
+      } catch (err) {
+        console.error("Dispatch poll error:", err);
+        if (attempts >= maxAttempts) clearInterval(interval);
+      }
+    }, 5000);
+    return interval;
   };
 
   // Reverse geocode a lat/lng to a street address
@@ -311,11 +334,7 @@ export default function App() {
           if (disaster.latitude && disaster.longitude) {
             setLastIncidentCoords([disaster.latitude, disaster.longitude]);
           }
-          setTimeout(() => {
-            getDispatchDecisions(disaster.id)
-              .then(res => setDispatchData(res.data.decisions || []))
-              .catch(err => console.error("Dispatch fetch error:", err));
-          }, 2000);
+          pollDispatchDecisions(disaster.id);
         }
       });
     } catch (error) {
@@ -427,7 +446,7 @@ export default function App() {
               {/* Inline map */}
               <div style={{ height: "320px", borderRadius: "8px", overflow: "hidden", marginBottom: "14px", border: "1px solid var(--border)" }}>
                 <MapContainer center={CHICAGO_CENTER} zoom={11} style={{ height: "100%", width: "100%" }}>
-                  <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
+                  <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO"/>
                   <MapClickHandler onMapClick={handleMapClick} />
                   {titlePin && (
                     <Marker position={[titlePin.lat, titlePin.lng]} icon={pinIcon}>
@@ -473,7 +492,7 @@ export default function App() {
       {/* MAP */}
       <div className="map-panel glass">
         <MapContainer center={CHICAGO_CENTER} zoom={CHICAGO_ZOOM} style={{ height: "100%", width: "100%" }}>
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
           <GeoJSON data={countriesData} onEachFeature={onEachCountry} />
 
           {/* Dummy station pins (Deepikka) */}
@@ -532,7 +551,7 @@ export default function App() {
                 {routeCoords.length > 1 && (
                   <Polyline
                     positions={routeCoords}
-                    pathOptions={{ color: isFire ? "#e05252" : "#50a0ff", weight: 4, opacity: 0.8 }}
+                    pathOptions={{ color: isFire ? "#e63946" : "#1d7aff", weight: 4, opacity: 0.8 }}
                   />
                 )}
               </span>
@@ -677,7 +696,7 @@ export default function App() {
                   </p>
                   <div style={{ height: "200px", borderRadius: "8px", overflow: "hidden", marginBottom: "10px", border: "1px solid var(--border)" }}>
                     <MapContainer center={CHICAGO_CENTER} zoom={11} style={{ height: "100%", width: "100%" }}>
-                      <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
+                    <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
                       <MapClickHandler onMapClick={handleNewMapClick} />
                       {newPin && (
                         <Marker position={[newPin.lat, newPin.lng]} icon={pinIcon}>
@@ -736,26 +755,49 @@ export default function App() {
 
                   {/* ── Dispatch strip ── */}
                   {dispatchData.length > 0 && (
-                    <div className="dispatch-strip">
-                      <div className="dispatch-strip-label">UNITS DISPATCHED</div>
-                      <div className="dispatch-strip-rows">
-                        {dispatchData.map((dispatch, i) => {
-                          const isFire = dispatch.dispatch_type === "fire";
-                          const name = dispatch.station_name || "—";
-                          return (
-                            <div key={i} className={`dispatch-strip-row ${isFire ? "fire" : "ambulance"}`}>
-                              <span className="dispatch-strip-icon">{isFire ? "🚒" : "🚑"}</span>
-                              <span className="dispatch-strip-name">{name}</span>
-                              <span className="dispatch-strip-dist">{dispatch.distance_km?.toFixed(1)} km</span>
-                              <span className="dispatch-strip-eta">ETA {dispatch.estimated_arrival_minutes} min</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                    <div style={{
+                      marginTop: "14px", padding: "12px 14px",
+                      background: "rgba(0,0,0,0.3)", border: "1px solid var(--border)",
+                      borderRadius: "6px",
+                    }}>
+                      <div style={{
+                        fontSize: "0.65rem", letterSpacing: "0.12em",
+                        textTransform: "uppercase", color: "var(--text-label)",
+                        marginBottom: "8px",
+                      }}>Units Dispatched</div>
+                      {dispatchData.map((dispatch, i) => {
+                        const isFire = dispatch.dispatch_type === "fire";
+                        const name = dispatch.station_name || "—";
+                        return (
+                          <div key={i} style={{
+                            display: "flex", alignItems: "center", gap: "10px",
+                            padding: "8px 0",
+                            borderTop: i > 0 ? "1px solid var(--border)" : "none",
+                            fontSize: "0.78rem",
+                          }}>
+                            <span style={{ fontSize: "1.1rem" }}>{isFire ? "🚒" : "🚑"}</span>
+                            <span style={{ flex: 1, color: "var(--text)" }}>{name}</span>
+                            <span style={{ color: "var(--text-dim)", whiteSpace: "nowrap" }}>
+                              {dispatch.distance_km?.toFixed(1)} km
+                            </span>
+                            <span style={{
+                              color: isFire ? "var(--red)" : "var(--amber)",
+                              whiteSpace: "nowrap", fontWeight: "bold",
+                            }}>
+                              ETA {dispatch.estimated_arrival_minutes} min
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
 
-                  {analysisResult.status === "analyzed" && (
+                  {analysisResult.status === "analyzed" && dispatchData.length === 0 && (
+                    <p style={{ color: "var(--text-dim)", fontSize: "0.78rem", marginTop: "10px" }}>
+                      <span className="submitting-indicator" />Routing dispatch…
+                    </p>
+                  )}
+                  {analysisResult.status === "analyzed" && dispatchData.length > 0 && (
                     <p style={{ color: "var(--green)", fontSize: "0.78rem", marginTop: "10px" }}>
                       ✓ Analysis complete
                     </p>

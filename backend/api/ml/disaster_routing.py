@@ -40,11 +40,15 @@ class DisasterRouting:
         d = self.get_nearest_node(destination_coords)
         try:
             route = nx.shortest_path(self.graph, o, d, weight=weight)
-            dist = sum(ox.utils_graph.get_route_edge_attributes(self.graph, route, 'length'))
+            dist = 0
+            for u, v in zip(route[:-1], route[1:]):
+                edge_data = self.graph.get_edge_data(u, v)
+                if edge_data:
+                    first_edge = edge_data[0] if 0 in edge_data else next(iter(edge_data.values()))
+                    dist += first_edge.get('length', 0)
             return {"route_nodes": route, "distance": dist, "success": True}
-        except:
+        except Exception as e:
             return {"route_nodes": None, "distance": None, "success": False}
-
     # ---------- FIRE STATIONS ----------
 
     

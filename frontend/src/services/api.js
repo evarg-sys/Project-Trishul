@@ -19,7 +19,7 @@ export const getActiveDisasters = () => {
 };
 
 
-export const pollDisasterAnalysis = (disasterId, onUpdate, maxAttempts = 20) => {
+export const pollDisasterAnalysis = (disasterId, onUpdate, maxAttempts = 60) => {
   let attempts = 0;
   
   const interval = setInterval(async () => {
