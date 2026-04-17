@@ -17,6 +17,16 @@ from world_state_dispatch import MultiRoutePlanner
 from world_state_dispatch import RouteOption
 from world_state_dispatch import WorldStateDB
 
+# New imports for Mapbox & EONET integration
+try:
+    from mapbox_service import MapboxService
+    from eonet_service import EONETService
+    from dispatch_helper import DispatchHelper
+    MAPBOX_AVAILABLE = True
+except ImportError:
+    MAPBOX_AVAILABLE = False
+    print("[WARN] Mapbox/EONET modules not available. Traffic-aware commands disabled.")
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
@@ -383,9 +393,9 @@ Commands:
   dispatch <incident> truck=<n> ambulance=<n>
     Create dispatches for an incident. Example: dispatch I1 truck=2 ambulance=1
 
-    dispatch_text <free text>
-        Parse text, estimate severity/population/priority, map to route node, and dispatch.
-        Example: dispatch_text major fire at 410 s morgan st many people hurt
+  dispatch_text <free text>
+    Parse text, estimate severity/population/priority, map to route node, and dispatch.
+    Example: dispatch_text major fire at 410 s morgan st many people hurt
 
   advance <minutes>
     Move simulation clock forward and print update every minute.
@@ -395,6 +405,20 @@ Commands:
 
   reset
     Clear station inventory and reseed defaults.
+
+*** Traffic-aware routing & hazard detection (requires MAPBOX_ACCESS_TOKEN) ***
+
+  fetch-hazards [days=7] [category=fires] [save=file.json]
+    Fetch active EONET disaster events.
+    Example: fetch-hazards days=14 category=fires save=hazards.json
+
+  route-unit --from lon,lat --to lon,lat
+    Get traffic-aware route with ETA using Mapbox driving-traffic profile.
+    Example: route-unit --from -87.65,41.88 --to -87.62,41.90
+
+  recommend-dispatch --incident lon,lat [--responders file.json] [--no-hazards]
+    Get dispatch recommendation for incident with traffic ETA and hazard scoring.
+    Example: recommend-dispatch --incident -87.628,41.885
 
   exit
     Quit CLI.
@@ -441,6 +465,187 @@ def run_model_demo(
     )
     print_snapshot(world)
     cmd_advance(world, 6)
+
+
+# ============================================================================
+# New commands for Mapbox traffic-aware routing & EONET hazard detection
+# ============================================================================
+
+def cmd_fetch_hazards(days: int = 7, category: str = "", save_file: str = "") -> None:
+    """
+    Fetch and display active EONET disaster events.
+    
+    Usage:
+      fetch-hazards [days=7] [category=fires] [save=hazards.json]
+    """
+    if not MAPBOX_AVAILABLE:
+        print("[ERROR] Mapbox/EONET modules not available")
+        return
+
+    eonet = EONETService()
+    filters = {"status": "open"}
+    if days > 0:
+        filters["days"] = days
+    if category:
+        filters["category"] = category
+
+    print(f"\n[INFO] Fetching active EONET events{' in category=' + category if category else ''}...")
+    events = eonet.fetch_events(**filters)
+
+    if not events:
+        print("No active events found.")
+        return
+
+    print(f"\nFound {len(events)} active event(s):")
+    for i, event in enumerate(events, 1):
+        num_geoms = len(event.geometries)
+        print(f"  {i}. {event.title}")
+        print(f"     Category: {event.category}")
+        print(f"     Closed: {event.closed}")
+        print(f"     Geometries: {num_geoms}")
+        if event.sources:
+            print(f"     Sources: {len(event.sources)}")
+
+    if save_file:
+        try:
+            data = [e.to_dict() for e in events]
+            with open(save_file, "w") as f:
+                __import__("json").dump(data, f, indent=2, default=str)
+            print(f"\n[OK] Saved {len(events)} event(s) to {save_file}")
+        except Exception as e:
+            print(f"[ERROR] Failed to save: {e}")
+
+
+def cmd_route_unit(from_coords: str, to_coords: str) -> None:
+    """
+    Calculate traffic-aware route between two locations using Mapbox.
+    
+    Usage:
+      route-unit --from lon,lat --to lon,lat
+    
+    Example:
+      route-unit --from -87.65,41.88 --to -87.62,41.90
+    """
+    if not MAPBOX_AVAILABLE:
+        print("[ERROR] Mapbox module not available")
+        return
+
+    try:
+        from_parts = from_coords.split(",")
+        to_parts = to_coords.split(",")
+        
+        from_lon, from_lat = float(from_parts[0]), float(from_parts[1])
+        to_lon, to_lat = float(to_parts[0]), float(to_parts[1])
+    except (ValueError, IndexError):
+        print("Usage: route-unit --from lon,lat --to lon,lat")
+        print("Example: route-unit --from -87.65,41.88 --to -87.62,41.90")
+        return
+
+    mapbox = MapboxService()
+    print(f"\n[INFO] Computing traffic route from ({from_lon},{from_lat}) to ({to_lon},{to_lat})...")
+    
+    route = mapbox.get_traffic_route(from_lon, from_lat, to_lon, to_lat)
+
+    if route.found:
+        print(f"[OK] Route found:")
+        print(f"  Distance: {route.distance_meters / 1000:.2f} km ({route.distance_meters:.0f}m)")
+        print(f"  Duration: {route.duration_minutes:.1f} minutes ({route.duration_seconds:.0f}s)")
+        print(f"  ETA: {route.duration_minutes:.1f} min")
+    else:
+        print(f"[ERROR] Route not found: {route.error}")
+
+
+def cmd_recommend_dispatch(
+    incident_coords: str,
+    responders_file: str = "",
+    use_hazards: bool = True,
+) -> None:
+    """
+    Get dispatch recommendation for an incident using traffic ETA and hazards.
+    
+    Usage:
+      recommend-dispatch --incident lon,lat [--responders file.json] [--no-hazards]
+    
+    Responders JSON format:
+      [
+        {"id": "e1", "name": "Engine-1", "lon": -87.65, "lat": 41.88},
+        {"id": "a2", "name": "Ambulance-2", "lon": -87.62, "lat": 41.90}
+      ]
+    """
+    if not MAPBOX_AVAILABLE:
+        print("[ERROR] Mapbox/EONET modules not available")
+        return
+
+    # Parse incident coords
+    try:
+        incident_parts = incident_coords.split(",")
+        incident_lon = float(incident_parts[0])
+        incident_lat = float(incident_parts[1])
+    except (ValueError, IndexError):
+        print("Usage: recommend-dispatch --incident lon,lat [--responders file.json]")
+        return
+
+    # Load responders
+    responders = []
+    if responders_file:
+        try:
+            with open(responders_file, "r") as f:
+                responders = __import__("json").load(f)
+            print(f"[OK] Loaded {len(responders)} responder(s) from {responders_file}")
+        except Exception as e:
+            print(f"[ERROR] Failed to load responders: {e}")
+            return
+    else:
+        # Use demo responders from existing world state
+        responders = [
+            {"id": "e1", "name": "Engine-1", "lon": -87.650, "lat": 41.880},
+            {"id": "a2", "name": "Ambulance-2", "lon": -87.620, "lat": 41.900},
+            {"id": "e3", "name": "Engine-3", "lon": -87.600, "lat": 41.850},
+        ]
+        print(f"[INFO] Using {len(responders)} demo responders")
+
+    # Get recommendation
+    helper = DispatchHelper()
+    valid, msg = helper.validate_responders(responders)
+    if not valid:
+        print(f"[ERROR] Invalid responders: {msg}")
+        return
+
+    print(f"\n[INFO] Computing dispatch recommendation for ({incident_lon},{incident_lat})...")
+    rec = helper.recommend_dispatch(
+        incident_id="incident_001",
+        incident_lon=incident_lon,
+        incident_lat=incident_lat,
+        responders=responders,
+        include_hazards=use_hazards,
+    )
+
+    # Print results
+    print(f"\n[RECOMMENDATION]")
+    if rec.best_responder:
+        print(f"  Best: {rec.best_responder.responder_name}")
+        print(f"  ETA: {rec.best_responder.eta_minutes:.1f} minutes")
+        print(f"  Distance: {rec.best_responder.distance_meters / 1000:.2f} km")
+        print(f"  Score: {rec.best_responder.score:.0f}")
+        if rec.best_responder.near_hazard:
+            print(f"  [WARNING] Near active hazard!")
+    else:
+        print("  (No responders available)")
+
+    if rec.hazards_nearby:
+        print(f"\nNearby hazards ({len(rec.hazards_nearby)}):")
+        for hazard in rec.hazards_nearby:
+            print(f"  - {hazard.title} ({hazard.category})")
+
+    print(f"\nAll candidates (sorted by score):")
+    print(f"  {'Responder':<15} {'ETA (min)':>10} {'Distance (km)':>15} {'Score':>10} {'Hazard':>10}")
+    print(f"  {'-'*15} {'-'*10} {'-'*15} {'-'*10} {'-'*10}")
+    for rank in rec.all_ranked:
+        hazard_flag = "YES" if rank.near_hazard else "no"
+        print(
+            f"  {rank.responder_name:<15} {rank.eta_minutes:>10.1f} "
+            f"{rank.distance_meters/1000:>15.2f} {rank.score:>10.0f} {hazard_flag:>10}"
+        )
 
 
 def parse_cli_args() -> argparse.Namespace:
@@ -506,6 +711,85 @@ def main() -> None:
                     continue
                 try:
                     cmd_dispatch_text(world, planner, coordinator, pop_model, text)
+                except Exception as exc:
+                    print(f"Command error: {exc}")
+                continue
+
+            # Handle traffic-aware commands with special parsing
+            if raw.lower().startswith("fetch-hazards"):
+                try:
+                    parts = raw.split()
+                    days = 7
+                    category = ""
+                    save_file = ""
+                    
+                    for part in parts[1:]:
+                        if "=" in part:
+                            k, v = part.split("=", 1)
+                            if k == "days":
+                                days = int(v)
+                            elif k == "category":
+                                category = v
+                            elif k == "save":
+                                save_file = v
+                    
+                    cmd_fetch_hazards(days, category, save_file)
+                except Exception as exc:
+                    print(f"Command error: {exc}")
+                continue
+
+            if raw.lower().startswith("route-unit"):
+                try:
+                    parts = raw.split()
+                    from_coords = ""
+                    to_coords = ""
+                    
+                    i = 1
+                    while i < len(parts):
+                        if parts[i] == "--from" and i + 1 < len(parts):
+                            from_coords = parts[i + 1]
+                            i += 2
+                        elif parts[i] == "--to" and i + 1 < len(parts):
+                            to_coords = parts[i + 1]
+                            i += 2
+                        else:
+                            i += 1
+                    
+                    if not from_coords or not to_coords:
+                        print("Usage: route-unit --from lon,lat --to lon,lat")
+                        continue
+                    
+                    cmd_route_unit(from_coords, to_coords)
+                except Exception as exc:
+                    print(f"Command error: {exc}")
+                continue
+
+            if raw.lower().startswith("recommend-dispatch"):
+                try:
+                    parts = raw.split()
+                    incident_coords = ""
+                    responders_file = ""
+                    use_hazards = True
+                    
+                    i = 1
+                    while i < len(parts):
+                        if parts[i] == "--incident" and i + 1 < len(parts):
+                            incident_coords = parts[i + 1]
+                            i += 2
+                        elif parts[i] == "--responders" and i + 1 < len(parts):
+                            responders_file = parts[i + 1]
+                            i += 2
+                        elif parts[i] == "--no-hazards":
+                            use_hazards = False
+                            i += 1
+                        else:
+                            i += 1
+                    
+                    if not incident_coords:
+                        print("Usage: recommend-dispatch --incident lon,lat [--responders file.json] [--no-hazards]")
+                        continue
+                    
+                    cmd_recommend_dispatch(incident_coords, responders_file, use_hazards)
                 except Exception as exc:
                     print(f"Command error: {exc}")
                 continue

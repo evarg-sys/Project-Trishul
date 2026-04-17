@@ -1,0 +1,8 @@
+[
+  {
+    "id": "u4",
+    "name": "Invalid JSON",
+    "lon": -87.628,
+    "lat": 41.88
+  -- THIS IS NOT VALID JSON
+]

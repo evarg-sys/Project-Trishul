@@ -502,7 +502,8 @@ class DispatchCoordinator:
                         distance_km=best_station_route.distance_km,
                         travel_minutes=best_station_route.travel_minutes,
                         on_scene_minutes=on_scene_minutes,
-                        return_minutes=max(best_station_route.travel_minutes, 1.0),
+                        return_minutes=maxexit
+                        (best_station_route.travel_minutes, 1.0),
                     )
                     orders.append(
                         {

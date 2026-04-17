@@ -1,0 +1,17 @@
+[
+  {"id": "e1", "name": "Engine-1", "lon": -87.6500, "lat": 41.8800},
+  {"id": "e2", "name": "Engine-2", "lon": -87.6400, "lat": 41.8900},
+  {"id": "e3", "name": "Engine-3", "lon": -87.6300, "lat": 41.8700},
+  {"id": "e4", "name": "Engine-4", "lon": -87.6200, "lat": 41.8600},
+  {"id": "a1", "name": "Ambulance-1", "lon": -87.6250, "lat": 41.8750},
+  {"id": "a2", "name": "Ambulance-2", "lon": -87.6450, "lat": 41.8850},
+  {"id": "a3", "name": "Ambulance-3", "lon": -87.6150, "lat": 41.8950},
+  {"id": "a4", "name": "Ambulance-4", "lon": -87.6350, "lat": 41.8650},
+  {"id": "a5", "name": "Ambulance-5", "lon": -87.6000, "lat": 41.9000},
+  {"id": "t1", "name": "Truck-1", "lon": -87.6500, "lat": 41.9000},
+  {"id": "t2", "name": "Truck-2", "lon": -87.6200, "lat": 41.8500},
+  {"id": "t3", "name": "Truck-3", "lon": -87.6100, "lat": 41.8700},
+  {"id": "c1", "name": "Chief-1", "lon": -87.6400, "lat": 41.8700},
+  {"id": "c2", "name": "Chief-2", "lon": -87.6300, "lat": 41.8900},
+  {"id": "h1", "name": "Helicopter-1", "lon": -87.6350, "lat": 41.8800}
+]
