@@ -19,7 +19,7 @@ export const getActiveDisasters = () => {
 };
 
 
-export const pollDisasterAnalysis = (disasterId, onUpdate, maxAttempts = 20) => {
+export const pollDisasterAnalysis = (disasterId, onUpdate, maxAttempts = 60) => {
   let attempts = 0;
   
   const interval = setInterval(async () => {
@@ -50,3 +50,12 @@ export const resolveDisaster = (id, resolutionNotes) => {
     resolution_notes: resolutionNotes
   });
 };
+
+export const getDispatchDecisions = (disasterId) =>
+  axios.get(`${API_BASE_URL}/disasters/${disasterId}/dispatch/`);
+
+export const getAnalytics = () =>
+  axios.get(`${API_BASE_URL}/analytics/`);
+
+export const getHospitals = () =>
+  axios.get(`${API_BASE_URL}/hospitals/`);

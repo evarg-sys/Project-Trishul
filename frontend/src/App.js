@@ -1,12 +1,74 @@
-import { MapContainer, TileLayer, GeoJSON } from "react-leaflet";
+import { MapContainer, TileLayer, GeoJSON, Marker, Polyline, Popup, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect } from "react";
 import "./App.css";
 import countriesData from "./data/countries.json";
-import { reportDisaster, getActiveDisasters, getFireStations, pollDisasterAnalysis, resolveDisaster } from "./services/api";
+import { reportDisaster, getActiveDisasters, getFireStations, pollDisasterAnalysis, resolveDisaster, getDispatchDecisions, getAnalytics, getHospitals } from "./services/api";
 import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8000/api";
+
+// Fix default leaflet marker icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require("leaflet/dist/images/marker-icon-2x.png"),
+  iconUrl:       require("leaflet/dist/images/marker-icon.png"),
+  shadowUrl:     require("leaflet/dist/images/marker-shadow.png"),
+});
+
+const incidentIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:42px;height:42px;border-radius:50%;background:rgba(255,200,0,0.9);
+    border:3px solid #ff9500;display:flex;align-items:center;justify-content:center;
+    font-size:22px;box-shadow:0 0 16px rgba(255,180,0,0.7);">⚠️</div>`,
+  iconSize: [42, 42],
+  iconAnchor: [21, 21],
+});
+
+const fireIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:38px;height:38px;border-radius:50%;background:#e63946;
+    border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:18px;
+    box-shadow:0 2px 8px rgba(230,57,70,0.6);">🚒</div>`,
+  iconSize: [38, 38],
+  iconAnchor: [19, 19],
+});
+
+const hospitalIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:38px;height:38px;border-radius:50%;background:#1d7aff;
+    border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:18px;
+    box-shadow:0 2px 8px rgba(29,122,255,0.6);">🏥</div>`,
+  iconSize: [38, 38],
+  iconAnchor: [19, 19],
+});
+
+// Auto-pan map to incident location
+function FlyTo({ coords }) {
+  const map = useMap();
+  if (coords) map.flyTo(coords, 14, { duration: 1.2 });
+  return null;
+}
+
+// Captures map clicks on the title page map picker
+function MapClickHandler({ onMapClick }) {
+  useMapEvents({
+    click(e) {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+const pinIcon = new L.DivIcon({
+  className: "",
+  html: `<div style="width:28px;height:28px;border-radius:50%;background:rgba(255,180,50,0.9);
+    border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;
+    box-shadow:0 0 12px rgba(255,180,50,0.6);">📍</div>`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+});
 
 const RESOURCE_ICONS = {
   "Fire Trucks": "🚒",
@@ -27,47 +89,45 @@ const INCIDENT_DETAIL_LABELS = {
   weather:     "Weather Constraints?",
 };
 
-// ── Title Page Option Configs ──────────────────────────────────
-const TITLE_OPTIONS = [
-  {
-    id: "loc-desc",
-    label: "Location + Description",
-    fields: [
-      { key: "location",    label: "Location",    placeholder: "e.g. 123 W Michigan Ave, Chicago", type: "input" },
-      { key: "description", label: "Description", placeholder: "Describe the incident…",            type: "textarea" },
-    ],
-  },
-  {
-    id: "parsed",
-    label: "Parsed Text",
-    fields: [
-      { key: "parsedText", label: "Raw Text Input", placeholder: "Paste dispatch log, report, or message here…", type: "textarea" },
-    ],
-  },
-  {
-    id: "loc-desc-coords",
-    label: "Location + Description + Coordinates",
-    fields: [
-      { key: "location",    label: "Location",    placeholder: "e.g. 123 W Michigan Ave, Chicago", type: "input"    },
-      { key: "description", label: "Description", placeholder: "Describe the incident…",            type: "textarea" },
-      { key: "latitude",    label: "Latitude",    placeholder: "e.g. 41.8781",                      type: "input"    },
-      { key: "longitude",   label: "Longitude",   placeholder: "e.g. -87.6298",                     type: "input"    },
-    ],
-  },
+// ── Dummy station pins ─────────────────────────────────────────
+const DUMMY_STATIONS = [
+  { id: 1, name: "Station Alpha — Loop",        lat: 41.8827, lng: -87.6233, fireTrucks: 4, ambulances: 3, others: 2 },
+  { id: 2, name: "Station Bravo — Lincoln Park", lat: 41.9214, lng: -87.6513, fireTrucks: 2, ambulances: 5, others: 1 },
+  { id: 3, name: "Station Charlie — Hyde Park",  lat: 41.7943, lng: -87.5907, fireTrucks: 3, ambulances: 2, others: 4 },
+  { id: 4, name: "Station Delta — Wicker Park",  lat: 41.9088, lng: -87.6789, fireTrucks: 5, ambulances: 4, others: 2 },
+  { id: 5, name: "Station Echo — Pilsen",        lat: 41.8556, lng: -87.6594, fireTrucks: 2, ambulances: 3, others: 3 },
+  { id: 6, name: "Station Foxtrot — Uptown",     lat: 41.9645, lng: -87.6527, fireTrucks: 3, ambulances: 2, others: 1 },
 ];
+
+const createStationIcon = () =>
+  L.divIcon({
+    className: "",
+    html: `
+      <div style="position:relative;width:20px;height:20px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(80,160,255,0.5);
+          animation:pinPulse 2.4s ease-out infinite;pointer-events:none;"></div>
+        <div style="width:9px;height:9px;border-radius:50%;background:#60a8ff;
+          box-shadow:0 0 0 2px rgba(80,160,255,0.25),0 0 10px rgba(80,160,255,0.7);
+          position:relative;z-index:2;flex-shrink:0;"></div>
+        <style>@keyframes pinPulse{0%{transform:scale(1);opacity:0.9;}70%{transform:scale(2.6);opacity:0;}100%{transform:scale(2.6);opacity:0;}}</style>
+      </div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+    tooltipAnchor: [16, 0],
+  });
+
+// ── Title Page Option Configs ──────────────────────────────────
 
 export default function App() {
   // ── Title page ────────────────────────────────────────────────
   const [showTitlePage,   setShowTitlePage]   = useState(true);
-  const [selectedOption,  setSelectedOption]  = useState(null); // "loc-desc" | "parsed" | "loc-desc-coords"
-  const [titleFields,     setTitleFields]     = useState({
-    location: "", description: "", parsedText: "", latitude: "", longitude: "",
-  });
-
-  const updateTitleField = (key, val) =>
-    setTitleFields(prev => ({ ...prev, [key]: val }));
-
-  const handleTitleEnter = () => setShowTitlePage(false);
+  const [titleMode,       setTitleMode]       = useState(null); // "type" | "map"
+  const [titleLocation,   setTitleLocation]   = useState("");
+  const [titleDesc,       setTitleDesc]       = useState("");
+  const [titleType,       setTitleType]       = useState("fire");
+  const [titlePin,        setTitlePin]        = useState(null); // {lat, lng}
+  const [titleError,      setTitleError]      = useState("");
+  const [titleSubmitting, setTitleSubmitting] = useState(false);
 
   // ── Core state ────────────────────────────────────────────────
   const [selected,  setSelected]  = useState(null);
@@ -104,10 +164,57 @@ export default function App() {
   const [resolveTarget,  setResolveTarget]  = useState(null);
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [resolving,       setResolving]       = useState(false);
+  const [dispatchData,    setDispatchData]    = useState([]);
+  const [analyticsData,   setAnalyticsData]   = useState(null);
+  const [hospitals,       setHospitals]       = useState([]);
+  const [newIncidentMode, setNewIncidentMode] = useState(null); // null | "type" | "map"
+  const [newPin,          setNewPin]          = useState(null);
+  const [lastIncidentCoords, setLastIncidentCoords] = useState(null);
+  const [incidentListPage, setIncidentListPage] = useState(0);
+  const INCIDENTS_PER_PAGE = 10; // persists pin on map
+const DISASTER_TYPES = [
+  { value: "fire",        label: "🔥 Fire",        color: "#e63946" },
+  { value: "flood",       label: "🌊 Flood",       color: "#1d7aff" },
+  { value: "earthquake",  label: "🏚️ Earthquake",  color: "#ff9500" },
+  { value: "chemical",    label: "☣️ Chemical",    color: "#8b5cf6" },
+  { value: "medical",     label: "🚑 Medical",     color: "#3ecf72" },
+  { value: "traffic",     label: "🚗 Traffic Accident",     color: "#f59e0b" },
+];
+
+function DisasterTypeButtons({ value, onChange }) {
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "4px" }}>
+      {DISASTER_TYPES.map(t => (
+        <button
+          key={t.value}
+          onClick={() => onChange(t.value)}
+          style={{
+            padding: "6px 12px",
+            fontSize: "0.72rem",
+            letterSpacing: "0.04em",
+            borderRadius: "20px",
+            border: `1.5px solid ${value === t.value ? t.color : "var(--border)"}`,
+            background: value === t.value ? `${t.color}22` : "rgba(0,0,0,0.2)",
+            color: value === t.value ? t.color : "var(--text-dim)",
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+            fontFamily: "var(--font-mono)",
+          }}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+
 
   useEffect(() => {
     if (view === "incidents") fetchActiveDisasters();
     if (view === "resolved")  fetchResolvedDisasters();
+    if (view === "analytics") fetchAnalytics();
+    if (view === "resources") { fetchHospitals(); fetchFireStations(); }
   }, [view]);
 
   useEffect(() => { fetchFireStations(); }, []);
@@ -116,35 +223,157 @@ export default function App() {
     try   { const r = await getActiveDisasters(); setActiveDisasters(r.data); }
     catch  { console.error("Failed to fetch active disasters"); }
   };
-
   const fetchResolvedDisasters = async () => {
     try   { const r = await axios.get(`${API_BASE_URL}/disasters/resolved/`); setResolvedDisasters(r.data); }
     catch  { console.error("Failed to fetch resolved disasters"); }
   };
-
   const fetchFireStations = async () => {
     try   { const r = await getFireStations(); setFireStations(r.data); }
     catch  { console.error("Failed to fetch fire stations"); }
   };
+  const fetchAnalytics = async () => {
+    try   { const r = await getAnalytics(); setAnalyticsData(r.data); }
+    catch  { console.error("Failed to fetch analytics"); }
+  };
+  const fetchHospitals = async () => {
+    try   { const r = await getHospitals(); setHospitals(r.data.hospitals || []); }
+    catch  { console.error("Failed to fetch hospitals"); }
+  };
+
+  // Submit from title page — goes straight to analysis
+  const handleTitleSubmit = async () => {
+    const location = titleLocation.trim();
+    const description = titleDesc.trim();
+    if (!location && !titlePin) { setTitleError("Please enter a location or pick one on the map."); return; }
+    setTitleError("");
+    setTitleSubmitting(true);
+    setAnalysisResult(null);
+    setDispatchData([]);
+    try {
+      const payload = {
+        disaster_type: titleType || "fire",
+        address:       location || `${titlePin.lat.toFixed(5)}, ${titlePin.lng.toFixed(5)}`,
+        description:   description,
+      };
+      // If map pin was used, pass coords directly so backend skips geocoding
+      if (titlePin) {
+        payload.latitude  = titlePin.lat;
+        payload.longitude = titlePin.lng;
+      }
+      const response = await reportDisaster(payload);
+      const disasterId = response.data.disaster_id;
+      setShowTitlePage(false);
+      setAnalyzing(true);
+      setView("analysis");
+      pollDisasterAnalysis(disasterId, (disaster) => {
+        setAnalysisResult(disaster);
+        if (disaster.status === "analyzed") {
+          setAnalyzing(false);
+          fetchActiveDisasters();
+          if (disaster.latitude && disaster.longitude) {
+            setLastIncidentCoords([disaster.latitude, disaster.longitude]);
+          }
+          pollDispatchDecisions(disaster.id);
+        }
+      });
+    } catch (err) {
+      setTitleError("Failed to submit. Is the backend running?");
+    } finally {
+      setTitleSubmitting(false);
+    }
+  };
+
+  // Poll dispatch decisions until both fire and ambulance records exist (max 3 minutes)
+  const pollDispatchDecisions = (disasterId, maxAttempts = 36) => {
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await getDispatchDecisions(disasterId);
+        const decisions = res.data.decisions || [];
+        const hasFire = decisions.some(d => d.dispatch_type === "fire");
+        const hasAmbulance = decisions.some(d => d.dispatch_type === "ambulance");
+        // Update UI as soon as we have anything, but keep polling until both arrive
+        if (decisions.length > 0) {
+          setDispatchData(decisions);
+        }
+        if ((hasFire && hasAmbulance) || attempts >= maxAttempts) {
+          clearInterval(interval);
+        }
+      } catch (err) {
+        console.error("Dispatch poll error:", err);
+        if (attempts >= maxAttempts) clearInterval(interval);
+      }
+    }, 5000);
+    return interval;
+  };
+
+  // Reverse geocode a lat/lng to a street address
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const res = await axios.get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const addr = res.data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+      setTitleLocation(addr);
+    } catch {
+      setTitleLocation(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    }
+  };
+
+  const handleMapClick = (lat, lng) => {
+    setTitlePin({ lat, lng });
+    reverseGeocode(lat, lng);
+  };
+
+  const handleNewMapClick = async (lat, lng) => {
+    setNewPin({ lat, lng });
+    try {
+      const res = await axios.get(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      updateDraft("location", res.data.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    } catch {
+      updateDraft("location", `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    }
+  };
 
   const handleSubmit = async () => {
-    if (!draft.location) { setSubmitError("Please enter a location."); return; }
+    if (!draft.location && !newPin) { setSubmitError("Please enter a location."); return; }
     setSubmitting(true);
     setSubmitError("");
     setAnalysisResult(null);
+    setDispatchData([]);
+    const pinSnapshot = newPin; // capture before clearing
+    setNewIncidentMode(null);
+    setNewPin(null);
     try {
-      const response = await reportDisaster({
+      const payload = {
         disaster_type: draft.predicted || "fire",
-        address:       draft.location,
+        address:       draft.location || `${pinSnapshot?.lat.toFixed(5)}, ${pinSnapshot?.lng.toFixed(5)}`,
         description:   draft.description,
-      });
+      };
+      if (pinSnapshot) {
+        payload.latitude  = pinSnapshot.lat;
+        payload.longitude = pinSnapshot.lng;
+      }
+      const response = await reportDisaster(payload);
       const disasterId = response.data.disaster_id;
       setAnalyzing(true);
       resetDraft();
       setView("analysis");
       pollDisasterAnalysis(disasterId, (disaster) => {
         setAnalysisResult(disaster);
-        if (disaster.status === "analyzed") { setAnalyzing(false); fetchActiveDisasters(); }
+        if (disaster.status === "analyzed") {
+          setAnalyzing(false);
+          fetchActiveDisasters();
+          if (disaster.latitude && disaster.longitude) {
+            setLastIncidentCoords([disaster.latitude, disaster.longitude]);
+          }
+          pollDispatchDecisions(disaster.id);
+        }
       });
     } catch (error) {
       console.error("Failed to report incident:", error);
@@ -171,77 +400,124 @@ export default function App() {
   const onEachCountry = (feature, layer) =>
     layer.on({ click: () => { setSelected(feature.properties.name); setView("country"); } });
 
+  const stationIcon = createStationIcon();
+
   // ── TITLE PAGE ────────────────────────────────────────────────
   if (showTitlePage) {
-    const activeOption = TITLE_OPTIONS.find(o => o.id === selectedOption);
-
     return (
       <div className="title-page">
-        <div className="title-page-inner">
+        <div className="title-page-inner" style={{ width: titleMode === "map" ? "820px" : "370px", maxWidth: "95vw" }}>
           <h1 className="title-page-heading">
             Disaster Response<br />Planning System
           </h1>
 
-          {/* Option selector cards */}
-          {!selectedOption && (
+          {/* Mode selector */}
+          {!titleMode && (
             <div className="title-option-grid">
-              {TITLE_OPTIONS.map((opt, i) => (
-                <button
-                  key={opt.id}
-                  className="title-option-card glass"
-                  style={{ animationDelay: `${0.1 + i * 0.1}s` }}
-                  onClick={() => setSelectedOption(opt.id)}
-                >
-                  <span className="title-option-label">{opt.label}</span>
-                </button>
-              ))}
+              <button
+                className="title-option-card glass"
+                style={{ animationDelay: "0.1s" }}
+                onClick={() => setTitleMode("type")}
+              >
+                <span className="title-option-label">✏️ Type Location + Description</span>
+              </button>
+              <button
+                className="title-option-card glass"
+                style={{ animationDelay: "0.2s" }}
+                onClick={() => setTitleMode("map")}
+              >
+                <span className="title-option-label">🗺️ Pick on Map + Description</span>
+              </button>
               <div
                 className="title-card glass title-incident-btn"
-                style={{ animationDelay: "0.4s", animation: "fadeSlideIn 0.4s ease 0.4s forwards", opacity: 0 }}
-                onClick={handleTitleEnter}
+                style={{ animationDelay: "0.3s", animation: "fadeSlideIn 0.4s ease 0.3s forwards", opacity: 0 }}
+                onClick={() => setShowTitlePage(false)}
               >
                 View Full Incident List →
               </div>
             </div>
           )}
 
-          {/* Selected option — input fields */}
-          {selectedOption && activeOption && (
+          {/* Type mode */}
+          {titleMode === "type" && (
             <div className="title-card glass" style={{ width: "100%" }}>
               <div className="title-option-back-row">
-                <button className="title-back-inline" onClick={() => setSelectedOption(null)}>
+                <button className="title-back-inline" onClick={() => { setTitleMode(null); setTitleError(""); }}>
                   ← Back
                 </button>
               </div>
+              <p className="title-option-selected-label">Where did the incident happen?</p>
+              <label className="title-label">Location</label>
+              <input
+                className="title-input"
+                type="text"
+                placeholder="e.g. 123 W Michigan Ave, Chicago"
+                value={titleLocation}
+                onChange={e => setTitleLocation(e.target.value)}
+              />
+              <label className="title-label" style={{ marginTop: "12px" }}>Description</label>
+              <textarea
+                className="title-input"
+                placeholder="Describe the incident…"
+                rows={3}
+                style={{ resize: "vertical" }}
+                value={titleDesc}
+                onChange={e => setTitleDesc(e.target.value)}
+              />
+              <label className="title-label" style={{ marginTop: "12px" }}>Incident Type</label>
+              <DisasterTypeButtons value={titleType} onChange={setTitleType} />
+              {titleError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{titleError}</p>}
+              <button className="title-enter-btn" onClick={handleTitleSubmit} disabled={titleSubmitting}>
+                {titleSubmitting ? "Submitting…" : "Report Incident →"}
+              </button>
+            </div>
+          )}
 
-              <p className="title-option-selected-label">{activeOption.label}</p>
+          {/* Map pick mode */}
+          {titleMode === "map" && (
+            <div className="title-card glass" style={{ width: "100%" }}>
+              <div className="title-option-back-row">
+                <button className="title-back-inline" onClick={() => { setTitleMode(null); setTitlePin(null); setTitleLocation(""); setTitleError(""); }}>
+                  ← Back
+                </button>
+              </div>
+              <p className="title-option-selected-label">Click the map to mark the incident location</p>
 
-              {activeOption.fields.map(f => (
-                <div key={f.key}>
-                  <label className="title-label">{f.label}</label>
-                  {f.type === "textarea" ? (
-                    <textarea
-                      className="title-input"
-                      placeholder={f.placeholder}
-                      rows={3}
-                      style={{ resize: "vertical" }}
-                      value={titleFields[f.key]}
-                      onChange={e => updateTitleField(f.key, e.target.value)}
-                    />
-                  ) : (
-                    <input
-                      className="title-input"
-                      type="text"
-                      placeholder={f.placeholder}
-                      value={titleFields[f.key]}
-                      onChange={e => updateTitleField(f.key, e.target.value)}
-                    />
+              {/* Inline map */}
+              <div style={{ height: "320px", borderRadius: "8px", overflow: "hidden", marginBottom: "14px", border: "1px solid var(--border)" }}>
+                <MapContainer center={CHICAGO_CENTER} zoom={11} style={{ height: "100%", width: "100%" }}>
+                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
+                  <MapClickHandler onMapClick={handleMapClick} />
+                  {titlePin && (
+                    <Marker position={[titlePin.lat, titlePin.lng]} icon={pinIcon}>
+                      <Popup>{titleLocation || "Selected location"}</Popup>
+                    </Marker>
                   )}
-                </div>
-              ))}
+                </MapContainer>
+              </div>
 
-              <button className="title-enter-btn" onClick={handleTitleEnter}>
-                Enter System →
+              <label className="title-label">Location {titlePin ? "(auto-filled from map)" : "(click map to fill)"}</label>
+              <input
+                className="title-input"
+                type="text"
+                placeholder="Click the map to auto-fill, or type manually"
+                value={titleLocation}
+                onChange={e => setTitleLocation(e.target.value)}
+              />
+              <label className="title-label" style={{ marginTop: "12px" }}>Description</label>
+              <textarea
+                className="title-input"
+                placeholder="Describe the incident…"
+                rows={3}
+                style={{ resize: "vertical" }}
+                value={titleDesc}
+                onChange={e => setTitleDesc(e.target.value)}
+              />
+              <label className="title-label" style={{ marginTop: "12px" }}>Incident Type</label>
+              <DisasterTypeButtons value={titleType} onChange={setTitleType} />
+              {titleError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{titleError}</p>}
+              <button className="title-enter-btn" onClick={handleTitleSubmit} disabled={titleSubmitting}>
+                {titleSubmitting ? "Submitting…" : "Report Incident →"}
               </button>
             </div>
           )}
@@ -253,13 +529,76 @@ export default function App() {
   // ── MAIN APP ──────────────────────────────────────────────────
   return (
     <div className="app-root">
-      <button className="back-btn" onClick={() => setShowTitlePage(true)}>← Back</button>
+      <button className="back-btn" onClick={() => setShowTitlePage(true)}>← Home</button>
 
       {/* MAP */}
       <div className="map-panel glass">
         <MapContainer center={CHICAGO_CENTER} zoom={CHICAGO_ZOOM} style={{ height: "100%", width: "100%" }}>
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" subdomains="abcd" />
+        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
           <GeoJSON data={countriesData} onEachFeature={onEachCountry} />
+
+          {/* Dummy station pins (Deepikka) */}
+          {DUMMY_STATIONS.map(station => (
+            <Marker key={station.id} position={[station.lat, station.lng]} icon={stationIcon}>
+              <Tooltip direction="right" offset={[14, 0]} opacity={1} className="station-tooltip">
+                <div className="station-tooltip-inner">
+                  <div className="station-tooltip-name">{station.name}</div>
+                  <div className="station-tooltip-divider" />
+                  <div className="station-tooltip-row">
+                    <span className="station-tooltip-icon">🚒</span>
+                    <span className="station-tooltip-label">Fire Trucks: {station.fireTrucks}</span>
+                  </div>
+                  <div className="station-tooltip-row">
+                    <span className="station-tooltip-icon">🚑</span>
+                    <span className="station-tooltip-label">Ambulances: {station.ambulances}</span>
+                  </div>
+                  <div className="station-tooltip-row">
+                    <span className="station-tooltip-icon">🚧</span>
+                    <span className="station-tooltip-label">Other Services: {station.others}</span>
+                  </div>
+                </div>
+              </Tooltip>
+            </Marker>
+          ))}
+
+          {/* Pan to incident when analyzed */}
+          {analysisResult?.latitude && analysisResult?.longitude && (
+            <FlyTo coords={[analysisResult.latitude, analysisResult.longitude]} />
+          )}
+
+          {/* Incident pin — persists even after navigating away */}
+          {lastIncidentCoords && (
+            <Marker position={lastIncidentCoords} icon={incidentIcon}>
+              <Popup>
+                <b>⚠️ {analysisResult?.disaster_type?.toUpperCase() || "INCIDENT"}</b><br />
+                {analysisResult?.address || ""}<br />
+                {analysisResult?.priority_score ? `Priority: ${analysisResult.priority_score.toFixed(0)}` : ""}
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Dispatch markers + routes */}
+          {dispatchData.map((dispatch, i) => {
+            const isFire = dispatch.dispatch_type === "fire";
+            const coords = dispatch.station_coords;
+            const routeCoords = dispatch.route_data?.route_coords || [];
+            return coords ? (
+              <span key={i}>
+                <Marker position={[coords[0], coords[1]]} icon={isFire ? fireIcon : hospitalIcon}>
+                  <Popup>
+                    <b>{isFire ? "🚒" : "🏥"} {dispatch.station_name}</b><br />
+                    {dispatch.distance_km?.toFixed(1)} km · ETA {dispatch.estimated_arrival_minutes} min
+                  </Popup>
+                </Marker>
+                {routeCoords.length > 1 && (
+                  <Polyline
+                    positions={routeCoords}
+                    pathOptions={{ color: isFire ? "#e63946" : "#1d7aff", weight: 4, opacity: 0.8 }}
+                  />
+                )}
+              </span>
+            ) : null;
+          })}
         </MapContainer>
       </div>
 
@@ -268,7 +607,7 @@ export default function App() {
         <div className="menu-panel glass">
           <h1>Disaster Response Planning System</h1>
           <div className="menu-buttons">
-            <button onClick={() => setModal("incidentList")}>Incident Lists</button>
+            <button onClick={() => { setModal("incidentList"); setIncidentListPage(0); fetchActiveDisasters(); fetchResolvedDisasters(); }}>Incident Lists</button>
             <button onClick={() => setView("incidents")}>Active Incidents</button>
             <button onClick={() => setView("resolved")}>Resolved Incidents</button>
             <button onClick={() => setView("resources")}>Resources</button>
@@ -304,8 +643,7 @@ export default function App() {
                         </span>
                       )}
                     </span>
-                    <button className="resolve-btn"
-                      onClick={() => { setResolveTarget(d); setResolutionNotes(""); }}>
+                    <button className="resolve-btn" onClick={() => { setResolveTarget(d); setResolutionNotes(""); }}>
                       Resolve
                     </button>
                   </div>
@@ -351,23 +689,80 @@ export default function App() {
           {view === "new" && (
             <div key="new" className="view-content">
               <h2>New Incident</h2>
-              <label>Location / Area</label>
-              <input value={draft.location} onChange={e => updateDraft("location", e.target.value)}
-                placeholder="e.g. 123 W Michigan Ave, Chicago" />
-              <label>Description</label>
-              <textarea value={draft.description} onChange={e => updateDraft("description", e.target.value)}
-                placeholder="Describe the incident…" rows={3} style={{ marginTop: "0", resize: "vertical" }} />
-              <label>Predicted Type</label>
-              <input value={draft.predicted} onChange={e => updateDraft("predicted", e.target.value)}
-                placeholder="fire / flood / earthquake" />
-              {submitError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{submitError}</p>}
-              <div className="form-buttons">
-                <button onClick={handleSubmit} disabled={submitting}>
-                  {submitting ? <><span className="submitting-indicator" />Submitting…</> : "Submit"}
-                </button>
-                <button onClick={() => { if (!saved) resetDraft(); setSaved(false); setView("country"); }}>Close</button>
-                <button onClick={() => { setSaved(true); alert("Draft saved."); }}>Save Draft</button>
-              </div>
+
+              {/* Mode selector */}
+              {!newIncidentMode && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
+                  <button onClick={() => setNewIncidentMode("type")}
+                    style={{ textAlign: "left", padding: "12px 14px" }}>
+                    ✏️ Type Location + Description
+                  </button>
+                  <button onClick={() => setNewIncidentMode("map")}
+                    style={{ textAlign: "left", padding: "12px 14px" }}>
+                    🗺️ Pick on Map + Description
+                  </button>
+                </div>
+              )}
+
+              {/* Type mode */}
+              {newIncidentMode === "type" && (
+                <>
+                  <button onClick={() => { setNewIncidentMode(null); resetDraft(); }}
+                    style={{ fontSize: "0.7rem", marginBottom: "10px", padding: "4px 10px" }}>← Back</button>
+                  <label>Location / Area</label>
+                  <input value={draft.location} onChange={e => updateDraft("location", e.target.value)}
+                    placeholder="e.g. 123 W Michigan Ave, Chicago" />
+                  <label>Description</label>
+                  <textarea value={draft.description} onChange={e => updateDraft("description", e.target.value)}
+                    placeholder="Describe the incident…" rows={3} style={{ marginTop: "0", resize: "vertical" }} />
+                  <label>Incident Type</label>
+                  <DisasterTypeButtons value={draft.predicted || "fire"} onChange={v => updateDraft("predicted", v)} />
+                  {submitError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{submitError}</p>}
+                  <div className="form-buttons">
+                    <button onClick={handleSubmit} disabled={submitting}>
+                      {submitting ? <><span className="submitting-indicator" />Submitting…</> : "Submit"}
+                    </button>
+                    <button onClick={() => { resetDraft(); setNewIncidentMode(null); setView("country"); }}>Close</button>
+                  </div>
+                </>
+              )}
+
+              {/* Map pick mode */}
+              {newIncidentMode === "map" && (
+                <>
+                  <button onClick={() => { setNewIncidentMode(null); setNewPin(null); resetDraft(); }}
+                    style={{ fontSize: "0.7rem", marginBottom: "8px", padding: "4px 10px" }}>← Back</button>
+                  <p style={{ color: "var(--text-dim)", fontSize: "0.75rem", marginBottom: "8px" }}>
+                    Click the map to mark the incident location
+                  </p>
+                  <div style={{ height: "200px", borderRadius: "8px", overflow: "hidden", marginBottom: "10px", border: "1px solid var(--border)" }}>
+                    <MapContainer center={CHICAGO_CENTER} zoom={11} style={{ height: "100%", width: "100%" }}>
+                    <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
+                      <MapClickHandler onMapClick={handleNewMapClick} />
+                      {newPin && (
+                        <Marker position={[newPin.lat, newPin.lng]} icon={pinIcon}>
+                          <Popup>{draft.location || "Selected location"}</Popup>
+                        </Marker>
+                      )}
+                    </MapContainer>
+                  </div>
+                  <label>Location {newPin ? "(auto-filled)" : "(click map)"}</label>
+                  <input value={draft.location} onChange={e => updateDraft("location", e.target.value)}
+                    placeholder="Click map to auto-fill, or type manually" />
+                  <label>Description</label>
+                  <textarea value={draft.description} onChange={e => updateDraft("description", e.target.value)}
+                    placeholder="Describe the incident…" rows={2} style={{ marginTop: "0", resize: "vertical" }} />
+                  <label>Incident Type</label>
+                  <DisasterTypeButtons value={draft.predicted || "fire"} onChange={v => updateDraft("predicted", v)} />
+                  {submitError && <p style={{ color: "var(--red)", fontSize: "0.78rem", marginTop: "8px" }}>{submitError}</p>}
+                  <div className="form-buttons">
+                    <button onClick={handleSubmit} disabled={submitting}>
+                      {submitting ? <><span className="submitting-indicator" />Submitting…</> : "Submit"}
+                    </button>
+                    <button onClick={() => { resetDraft(); setNewIncidentMode(null); setNewPin(null); setView("country"); }}>Close</button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -397,7 +792,52 @@ export default function App() {
                       <input readOnly value={val || ""} />
                     </div>
                   ))}
-                  {analysisResult.status === "analyzed" && (
+
+                  {/* ── Dispatch strip ── */}
+                  {dispatchData.length > 0 && (
+                    <div style={{
+                      marginTop: "14px", padding: "12px 14px",
+                      background: "rgba(0,0,0,0.3)", border: "1px solid var(--border)",
+                      borderRadius: "6px",
+                    }}>
+                      <div style={{
+                        fontSize: "0.65rem", letterSpacing: "0.12em",
+                        textTransform: "uppercase", color: "var(--text-label)",
+                        marginBottom: "8px",
+                      }}>Units Dispatched</div>
+                      {dispatchData.map((dispatch, i) => {
+                        const isFire = dispatch.dispatch_type === "fire";
+                        const name = dispatch.station_name || "—";
+                        return (
+                          <div key={i} style={{
+                            display: "flex", alignItems: "center", gap: "10px",
+                            padding: "8px 0",
+                            borderTop: i > 0 ? "1px solid var(--border)" : "none",
+                            fontSize: "0.78rem",
+                          }}>
+                            <span style={{ fontSize: "1.1rem" }}>{isFire ? "🚒" : "🚑"}</span>
+                            <span style={{ flex: 1, color: "var(--text)" }}>{name}</span>
+                            <span style={{ color: "var(--text-dim)", whiteSpace: "nowrap" }}>
+                              {dispatch.distance_km?.toFixed(1)} km
+                            </span>
+                            <span style={{
+                              color: isFire ? "var(--red)" : "var(--amber)",
+                              whiteSpace: "nowrap", fontWeight: "bold",
+                            }}>
+                              ETA {dispatch.estimated_arrival_minutes} min
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {analysisResult.status === "analyzed" && dispatchData.length === 0 && (
+                    <p style={{ color: "var(--text-dim)", fontSize: "0.78rem", marginTop: "10px" }}>
+                      <span className="submitting-indicator" />Routing dispatch…
+                    </p>
+                  )}
+                  {analysisResult.status === "analyzed" && dispatchData.length > 0 && (
                     <p style={{ color: "var(--green)", fontSize: "0.78rem", marginTop: "10px" }}>
                       ✓ Analysis complete
                     </p>
@@ -415,26 +855,45 @@ export default function App() {
             <div key="analytics" className="view-content">
               <h2>Analytics</h2>
               {[
-                ["Average Response Time", ""],
-                ["AI Accuracy",           ""],
-                ["Active Incidents",      activeDisasters.length],
-                ["Average Severity",      ""],
+                ["Active Incidents",   analyticsData ? analyticsData.incidents.active   : activeDisasters.length],
+                ["Resolved Incidents", analyticsData ? analyticsData.incidents.resolved : "—"],
+                ["Total Incidents",    analyticsData ? analyticsData.incidents.total    : "—"],
+                ["Avg Response Time",  analyticsData ? `${analyticsData.avg_response_time_minutes} min` : "—"],
+                ["AI Confidence",      analyticsData ? `${analyticsData.avg_confidence_pct}%` : "—"],
+                ["Avg Severity Score", analyticsData ? analyticsData.avg_severity : "—"],
               ].map(([lbl, val]) => (
                 <div className="row" key={lbl}>
                   <label style={{ margin: 0 }}>{lbl}</label>
-                  <input value={val} readOnly={lbl === "Active Incidents"} onChange={() => {}} />
+                  <input value={val} readOnly onChange={() => {}} />
                 </div>
               ))}
               <div className="resources-subbox">
                 <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.85rem",
                   letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: "var(--amber-dim)", marginBottom: "12px" }}>Resource Utilization</h3>
-                {["Fire Truck","Ambulance","Police Units"].map(r => (
-                  <div className="row" key={r}>
-                    <label style={{ margin: 0 }}>{r} Utilization</label>
-                    <input />
+                  color: "var(--amber-dim)", marginBottom: "12px" }}>Dispatch Summary</h3>
+                {[
+                  ["Fire Dispatches",      analyticsData ? analyticsData.dispatches.fire      : "—"],
+                  ["Ambulance Dispatches", analyticsData ? analyticsData.dispatches.ambulance  : "—"],
+                  ["Total Dispatches",     analyticsData ? analyticsData.dispatches.total      : "—"],
+                ].map(([lbl, val]) => (
+                  <div className="row" key={lbl}>
+                    <label style={{ margin: 0 }}>{lbl}</label>
+                    <input value={val} readOnly onChange={() => {}} />
                   </div>
                 ))}
+              </div>
+              <div className="resources-subbox">
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.85rem",
+                  letterSpacing: "0.08em", textTransform: "uppercase",
+                  color: "var(--amber-dim)", marginBottom: "12px" }}>Incident Types</h3>
+                {analyticsData ? analyticsData.type_breakdown.map(({ disaster_type, count }) => (
+                  <div className="row" key={disaster_type}>
+                    <label style={{ margin: 0 }}>{disaster_type.toUpperCase()}</label>
+                    <input value={count} readOnly onChange={() => {}} />
+                  </div>
+                )) : (
+                  <p style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>Loading…</p>
+                )}
               </div>
             </div>
           )}
@@ -453,14 +912,14 @@ export default function App() {
                   color: "var(--amber-dim)", marginBottom: "12px" }}>All Resources</h3>
                 {[
                   ["Fire Trucks Availability",  fireStations.reduce((s, x) => s + x.available_trucks, 0)],
-                  ["Ambulance Availability",    ""],
-                  ["Police Units Availability", ""],
-                  ["Other Availability",        ""],
-                  ["Total Availability",        ""],
+                  ["Ambulance Availability",    hospitals.reduce((s, x) => s + x.available_ambulances, 0)],
+                  ["Police Units Availability", "N/A"],
+                  ["Other Availability",        "N/A"],
+                  ["Total Availability",        fireStations.reduce((s, x) => s + x.available_trucks, 0) + hospitals.reduce((s, x) => s + x.available_ambulances, 0)],
                 ].map(([lbl, val]) => (
                   <div className="resource-row" key={lbl}>
                     <label>{lbl}</label>
-                    <input value={val} readOnly={lbl === "Fire Trucks Availability"} onChange={() => {}} />
+                    <input value={val} readOnly onChange={() => {}} />
                   </div>
                 ))}
                 <div className="resource-actions">
@@ -474,7 +933,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── RESOLVE MODAL ──────────────────────────────────────── */}
+      {/* ── RESOLVE MODAL ── */}
       {resolveTarget && (
         <div className="modal-overlay">
           <div className="modal glass">
@@ -498,7 +957,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── RESOURCE DETAIL POPUP ──────────────────────────────── */}
+      {/* ── RESOURCE DETAIL POPUP ── */}
       {resourceModal && (
         <div className="modal-overlay" onClick={() => setResourceModal(null)}>
           <div className="modal glass resource-popup" onClick={e => e.stopPropagation()}>
@@ -525,27 +984,125 @@ export default function App() {
         </div>
       )}
 
-      {/* ── OTHER MODALS ───────────────────────────────────────── */}
-      {modal && (
-        <div className="modal-overlay">
-          <div className="modal glass">
-            {modal === "incidentList" && (
-              <>
-                <h2>Full Incident List</h2>
-                {activeDisasters.length === 0
-                  ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>No incidents reported yet.</p>
-                  : activeDisasters.map((d, i) => (
-                    <div key={d.id} className="incident-box" style={{ animationDelay: `${i * 0.06}s` }}>
-                      <strong style={{ color: "var(--amber)" }}>{d.disaster_type.toUpperCase()}</strong>
-                      {" — "}{d.address}<br />
-                      <small style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
-                        Status: {d.status} · {new Date(d.reported_at).toLocaleString()}
-                      </small>
+      {/* ── INCIDENT LIST FULL PAGE OVERLAY ── */}
+      {modal === "incidentList" && (() => {
+        const allIncidents = [...activeDisasters, ...resolvedDisasters]
+          .sort((a, b) => new Date(b.reported_at) - new Date(a.reported_at));
+        const totalPages = Math.ceil(allIncidents.length / INCIDENTS_PER_PAGE);
+        const pageItems = allIncidents.slice(
+          incidentListPage * INCIDENTS_PER_PAGE,
+          (incidentListPage + 1) * INCIDENTS_PER_PAGE
+        );
+        return (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
+            backdropFilter: "blur(8px)", zIndex: 999,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <div style={{
+              width: "680px", maxWidth: "92vw", maxHeight: "88vh",
+              background: "var(--bg-panel)", border: "1px solid var(--border)",
+              borderRadius: "12px", display: "flex", flexDirection: "column",
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.6)",
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: "20px 24px 14px", borderBottom: "1px solid var(--border)",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+              }}>
+                <h2 style={{ fontFamily: "var(--font-display)", fontSize: "0.95rem",
+                  letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--amber)", margin: 0 }}>
+                  ▸ Full Incident List
+                </h2>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
+                    {allIncidents.length} total
+                  </span>
+                  <button onClick={() => setModal(null)} style={{
+                    padding: "5px 14px", fontSize: "0.7rem", background: "rgba(224,82,82,0.1)",
+                    borderColor: "rgba(224,82,82,0.3)", color: "var(--red)",
+                  }}>✕ Close</button>
+                </div>
+              </div>
+
+              {/* Incident rows */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "12px 24px" }}>
+                {allIncidents.length === 0
+                  ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginTop: "16px" }}>No incidents reported yet.</p>
+                  : pageItems.map((d, i) => (
+                    <div key={d.id} style={{
+                      border: "1px solid var(--border)",
+                      borderLeft: `3px solid ${d.status === "resolved" ? "var(--green)" : "var(--amber-dim)"}`,
+                      padding: "12px 14px", marginBottom: "8px", borderRadius: "6px",
+                      fontSize: "0.82rem",
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <div>
+                          <strong style={{ color: d.status === "resolved" ? "var(--green)" : "var(--amber)" }}>
+                            {d.disaster_type.toUpperCase()}
+                          </strong>
+                          {" — "}
+                          <span style={{ color: "var(--text)" }}>{d.address}</span>
+                        </div>
+                        <span style={{
+                          fontSize: "0.68rem", padding: "2px 8px", borderRadius: "4px",
+                          background: d.status === "resolved" ? "rgba(62,207,114,0.1)" : "rgba(255,180,50,0.1)",
+                          color: d.status === "resolved" ? "var(--green)" : "var(--amber)",
+                          border: `1px solid ${d.status === "resolved" ? "rgba(62,207,114,0.25)" : "rgba(255,180,50,0.25)"}`,
+                          whiteSpace: "nowrap", marginLeft: "10px",
+                        }}>
+                          {d.status}
+                        </span>
+                      </div>
+                      <div style={{ marginTop: "4px", color: "var(--text-dim)", fontSize: "0.72rem", display: "flex", gap: "16px" }}>
+                        <span>{new Date(d.reported_at).toLocaleString()}</span>
+                        {d.priority_score > 0 && <span>Priority: {d.priority_score.toFixed(0)}</span>}
+                        {d.severity_score > 0 && <span>Severity: {d.severity_score}</span>}
+                      </div>
                     </div>
                   ))
                 }
-              </>
-            )}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div style={{
+                  padding: "14px 24px", borderTop: "1px solid var(--border)",
+                  display: "flex", justifyContent: "center", alignItems: "center", gap: "8px",
+                }}>
+                  <button onClick={() => setIncidentListPage(p => Math.max(0, p - 1))}
+                    disabled={incidentListPage === 0}
+                    style={{ padding: "5px 14px", opacity: incidentListPage === 0 ? 0.4 : 1 }}>
+                    ← Prev
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button key={i} onClick={() => setIncidentListPage(i)}
+                      style={{
+                        padding: "5px 10px", minWidth: "32px",
+                        background: i === incidentListPage ? "rgba(80,160,255,0.2)" : "rgba(255,180,50,0.05)",
+                        borderColor: i === incidentListPage ? "var(--amber)" : "var(--border)",
+                        color: i === incidentListPage ? "var(--amber)" : "var(--text-dim)",
+                      }}>
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button onClick={() => setIncidentListPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={incidentListPage === totalPages - 1}
+                    style={{ padding: "5px 14px", opacity: incidentListPage === totalPages - 1 ? 0.4 : 1 }}>
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+
+      {/* ── OTHER MODALS ── */}
+      {modal && modal !== "incidentList" && (
+        <div className="modal-overlay">
+          <div className="modal glass">
             {modal === "severity" && (
               <>
                 <h2>Severity Scaling</h2>

@@ -40,24 +40,35 @@ class DisasterRouting:
         d = self.get_nearest_node(destination_coords)
         try:
             route = nx.shortest_path(self.graph, o, d, weight=weight)
-            dist = sum(ox.utils_graph.get_route_edge_attributes(self.graph, route, 'length'))
+            dist = 0
+            for u, v in zip(route[:-1], route[1:]):
+                edge_data = self.graph.get_edge_data(u, v)
+                if edge_data:
+                    first_edge = edge_data[0] if 0 in edge_data else next(iter(edge_data.values()))
+                    dist += first_edge.get('length', 0)
             return {"route_nodes": route, "distance": dist, "success": True}
-        except:
+        except Exception as e:
             return {"route_nodes": None, "distance": None, "success": False}
-
     # ---------- FIRE STATIONS ----------
 
+    
     def find_nearby_fire_stations(self, center_coords, radius_meters=5000, max_results=5):
         tags = {"amenity": "fire_station"}
         gdf = self._features_from_point(center_coords, tags=tags, radius_meters=radius_meters)
         stations = []
         for _, row in gdf.iterrows():
-            if row.geometry:
-                c = row.geometry.centroid
+            try:
+                geom = row.geometry
+                if geom is None or geom.is_empty:
+                    continue
+                c = geom.centroid
                 stations.append({
                     "name": row.get("name", "Unnamed Fire Station"),
                     "coords": (c.y, c.x)
                 })
+            except Exception as e:
+                print(f"Skipping station row: {e}")
+                continue
         return stations[:max_results]
 
     def generate_fire_routes(self, disaster_coords):
@@ -85,12 +96,18 @@ class DisasterRouting:
         gdf = self._features_from_point(center_coords, tags=tags, radius_meters=radius_meters)
         hospitals = []
         for _, row in gdf.iterrows():
-            if row.geometry:
-                c = row.geometry.centroid
+            try:
+                geom = row.geometry
+                if geom is None or geom.is_empty:
+                    continue
+                c = geom.centroid
                 hospitals.append({
                     "name": row.get("name", "Unnamed Hospital"),
                     "coords": (c.y, c.x)
                 })
+            except Exception as e:
+                print(f"Skipping hospital row: {e}")
+                continue
         return hospitals[:max_results]
 
     def generate_ambulance_routes(self, disaster_coords):
@@ -113,6 +130,10 @@ class DisasterRouting:
 
     def _features_from_point(self, center_coords, tags, radius_meters=5000):
         """Load nearby map features with compatibility across OSMnx versions."""
+        import osmnx as ox
+        # Use a faster Overpass endpoint
+        ox.settings.overpass_endpoint = "https://overpass.kumi.systems/api/interpreter"
+    
         if hasattr(ox, "features_from_point"):
             return ox.features_from_point(center_coords, tags=tags, dist=radius_meters)
         if hasattr(ox, "geometries_from_point"):

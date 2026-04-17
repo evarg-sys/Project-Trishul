@@ -1,0 +1,141 @@
+
+.map-pin {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .map-pin-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--amber);
+    box-shadow:
+      0 0 0 2px rgba(80, 160, 255, 0.25),
+      0 0 8px rgba(80, 160, 255, 0.6);
+    position: relative;
+    z-index: 2;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  
+  .map-pin-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(80, 160, 255, 0.45);
+    animation: pinPulse 2.4s ease-out infinite;
+  }
+  
+  /* Second pulse ring via pseudo — pure CSS, no extra element */
+  .map-pin::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(80, 160, 255, 0.2);
+    animation: pinPulse 2.4s ease-out 0.8s infinite;
+  }
+  
+  @keyframes pinPulse {
+    0%   { transform: scale(1);   opacity: 0.8; }
+    70%  { transform: scale(2.2); opacity: 0;   }
+    100% { transform: scale(2.2); opacity: 0;   }
+  }
+  
+  /* Hover — make the dot brighter */
+  .leaflet-marker-icon:hover .map-pin-dot {
+    transform: scale(1.35);
+    box-shadow:
+      0 0 0 3px rgba(80, 160, 255, 0.35),
+      0 0 14px rgba(80, 160, 255, 0.8);
+  }
+  
+  /* ── Override Leaflet's default tooltip chrome ───────────────── */
+  .leaflet-tooltip.station-tooltip {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  
+  .leaflet-tooltip.station-tooltip::before {
+    display: none !important;
+    border: none !important;
+  }
+  
+  /* ── Tooltip card ────────────────────────────────────────────── */
+  .station-tooltip-inner {
+    background: rgba(8, 14, 26, 0.94);
+    border: 1px solid rgba(80, 160, 255, 0.35);
+    border-radius: 8px;
+    padding: 11px 14px;
+    min-width: 195px;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 8px 28px rgba(0, 0, 0, 0.55),
+      0 0 16px rgba(80, 160, 255, 0.08);
+    font-family: 'Share Tech Mono', 'Courier New', monospace;
+    animation: tooltipFade 0.15s ease forwards;
+  }
+  
+  @keyframes tooltipFade {
+    from { opacity: 0; transform: translateX(-4px); }
+    to   { opacity: 1; transform: translateX(0);    }
+  }
+  
+  /* Station name header */
+  .station-tooltip-name {
+    font-family: 'Special Elite', 'Times New Roman', serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(80, 160, 255, 0.9);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  
+  /* Thin divider */
+  .station-tooltip-divider {
+    height: 1px;
+    background: rgba(80, 160, 255, 0.18);
+    margin-bottom: 9px;
+  }
+  
+  /* Each resource row */
+  .station-tooltip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+  }
+  
+  .station-tooltip-icon {
+    font-size: 0.85rem;
+    line-height: 1;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  
+  .station-tooltip-label {
+    flex: 1;
+    font-size: 0.72rem;
+    color: rgba(208, 220, 234, 0.6);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  
+  .station-tooltip-value {
+    font-size: 0.82rem;
+    font-weight: bold;
+    color: rgba(208, 220, 234, 0.95);
+    letter-spacing: 0.05em;
+    min-width: 18px;
+    text-align: right;
+  }

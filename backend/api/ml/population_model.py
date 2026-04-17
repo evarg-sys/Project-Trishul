@@ -72,7 +72,6 @@ class PopulationDensityModel:
         """Load census data from CSV file with proper CSV parsing"""
         csv_path = Path(csv_file_path)
 
-        # If relative path, try to find it relative to this file first
         if not csv_path.is_absolute() and not csv_path.exists():
             csv_path = Path(__file__).parent.parent.parent / 'data' / csv_file_path
 
@@ -117,7 +116,7 @@ class PopulationDensityModel:
         return self.census_data
 
     def get_buildings_from_osm(self, lat, lon, radius_meters=1000):
-        """Query OSM for buildings with caching"""
+        """Query OSM for buildings with caching and fallback endpoints"""
         cache_key = self._get_cache_key('buildings', lat, lon, radius_meters)
 
         if cache_key in self.api_cache:
@@ -128,7 +127,6 @@ class PopulationDensityModel:
                 print(f"Building type breakdown: {cached['counts']}")
             return cached['counts'], cached['total']
 
-        overpass_url = "http://overpass-api.de/api/interpreter"
         overpass_query = f"""
         [out:json];
         (
@@ -137,10 +135,37 @@ class PopulationDensityModel:
         );
         out body;
         """
+
+        # Try multiple endpoints in order
+        endpoints = [
+            "https://overpass.kumi.systems/api/interpreter",
+            "http://overpass-api.de/api/interpreter",
+    
+        ]
+
         print(f"\nQuerying OSM for buildings around ({lat}, {lon})...")
+        data = None
+        for endpoint in endpoints:
+            try:
+                response = requests.get(
+                    endpoint,
+                    params={'data': overpass_query},
+                    timeout=15
+                )
+                if response.status_code == 200 and response.text.strip():
+                    data = response.json()
+                    break
+            except Exception as e:
+                print(f"  Endpoint {endpoint} failed: {e}")
+                continue
+
+        if data is None:
+            print(f"Error querying OSM: all endpoints failed")
+            self.api_cache[cache_key] = {'counts': {}, 'total': 0}
+            self._save_api_cache()
+            return {}, 0
+
         try:
-            response = requests.get(overpass_url, params={'data': overpass_query}, timeout=30)
-            data = response.json()
             buildings = data.get('elements', [])
             building_types = []
             for building in buildings:
