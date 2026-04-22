@@ -3,10 +3,13 @@ from django.db import models
 class Disaster(models.Model):
     """Main disaster record"""
     DISASTER_TYPES = [
-        ('fire', 'Fire'),
-        ('earthquake', 'Earthquake'),
-        ('flood', 'Flood'),
-    ]
+    ('fire', 'Fire'),
+    ('earthquake', 'Earthquake'),
+    ('flood', 'Flood'),
+    ('chemical', 'Chemical'),
+    ('medical', 'Medical'),
+    ('traffic', 'Traffic Accident'),
+]
     
     # Input data
     disaster_type = models.CharField(max_length=20, choices=DISASTER_TYPES)
