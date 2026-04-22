@@ -4,6 +4,7 @@ from rest_framework import status
 from .models import Disaster, FireStation, Hospital, DispatchDecision
 from .serializers import DisasterSerializer, FireStationSerializer, DispatchDecisionSerializer
 from .ml.priority_model import calculate_priority
+from .models import Disaster, FireStation, Hospital, DispatchDecision
 from django.db import models
 import math
 
@@ -336,3 +337,17 @@ def get_analytics(request):
         },
         'type_breakdown': type_breakdown,
     })
+
+
+@api_view(['GET'])
+def get_hospitals(request):
+    hospitals = Hospital.objects.all()
+    data = [{
+        'id': h.id,
+        'name': h.name,
+        'latitude': h.latitude,
+        'longitude': h.longitude,
+        'available_ambulances': h.available_ambulances,
+        'operational': h.operational,
+    } for h in hospitals]
+    return Response({'count': len(data), 'hospitals': data})

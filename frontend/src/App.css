@@ -419,7 +419,6 @@ button:active {
 .leaflet-container {
   height: 100% !important;
   width: 100% !important;
-  filter: grayscale(100%) brightness(0.5) sepia(25%) hue-rotate(5deg);
   border-radius: var(--radius-lg);
 }
 

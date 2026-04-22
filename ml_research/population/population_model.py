@@ -1,557 +1,282 @@
-import csv
-import requests
+import numpy as np
 import json
-import os
-from collections import Counter
 from pathlib import Path
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
+import pickle
 
-# Try to import ML model (optional dependency)
-try:
-    from population_ml_model import PopulationMLModel
-    ML_AVAILABLE = True
-except ImportError:
-    ML_AVAILABLE = False
-    print("[INFO] ML model not available. Install sklearn for ML-based estimation.")
-
-class PopulationDensityModel:
+class PopulationMLModel:
+    """Machine Learning based population estimation using Neural Network"""
     
-    BUILDING_OCCUPANCY = {
-        'residential': 2.5,
-        'apartments': 4.0,
-        'house': 2.5,
-        'detached': 2.3,
-        'semidetached_house': 2.5,
-        'terrace': 2.7,
-        'commercial': 0.1,
-        'retail': 0.0,
-        'industrial': 0.0,
-    }
-    
-    def __init__(self, chi_factor=1.0, cache_dir=None, use_ml=False):
-        self.chi_factor = chi_factor
-        self.census_data = {}
-        self.cache_dir = cache_dir or Path(__file__).parent / '.cache'
-        self.cache_dir.mkdir(exist_ok=True)
-        self.api_cache = self._load_api_cache()
+    def __init__(self, model_path=None):
+        """Initialize ML model"""
+        self.model = None
+        self.scaler = None
+        self.model_path = model_path or Path(__file__).parent / '.ml_models' / 'population_model.pkl'
+        self.scaler_path = model_path or Path(__file__).parent / '.ml_models' / 'scaler.pkl'
+        self.training_data = []
         
-        # ML Model integration
-        self.use_ml = use_ml and ML_AVAILABLE
-        self.ml_model = None
-        if self.use_ml:
+        # Create directory if doesn't exist
+        self.model_path.parent.mkdir(exist_ok=True, parents=True)
+        
+        # Try to load existing model
+        self._load_model()
+    
+    def _save_model(self):
+        """Save trained model to disk"""
+        if self.model is not None:
             try:
-                self.ml_model = PopulationMLModel()
-                if self.ml_model.model is None:
-                    print("[INFO] ML model not trained yet. Will use formula-based estimation.")
-                    self.use_ml = False
+                with open(self.model_path, 'wb') as f:
+                    pickle.dump(self.model, f)
+                with open(self.scaler_path, 'wb') as f:
+                    pickle.dump(self.scaler, f)
+                print(f"✓ Model saved to {self.model_path}")
             except Exception as e:
-                print(f"[INFO] ML model initialization failed: {e}")
-                self.use_ml = False
+                print(f"Error saving model: {e}")
     
-    def _get_cache_path(self):
-        """Get the path to the API cache file"""
-        return self.cache_dir / 'api_cache.json'
-    
-    def _load_api_cache(self):
-        """Load cached API responses"""
-        cache_path = self._get_cache_path()
-        if cache_path.exists():
-            try:
-                with open(cache_path, 'r') as f:
-                    return json.load(f)
-            except:
-                return {}
-        return {}
-    
-    def _save_api_cache(self):
-        """Save API cache to file"""
-        cache_path = self._get_cache_path()
-        with open(cache_path, 'w') as f:
-            json.dump(self.api_cache, f, indent=2)
-    
-    def _get_cache_key(self, key_type, *args):
-        """Generate a cache key"""
-        return f"{key_type}::{':'.join(str(arg) for arg in args)}"
-    
-    def load_census_data(self, csv_file_path):
-        """Load census data from CSV file with proper CSV parsing"""
-        csv_path = Path(csv_file_path)
-        
-        # If relative path, try to find it relative to this file first
-        if not csv_path.is_absolute() and not csv_path.exists():
-            csv_path = Path(__file__).parent / csv_file_path
-        
-        if not csv_path.exists():
-            print(f"ERROR: CSV file not found at {csv_path}")
-            return {}
-        
-        count = 0
-        print(f"Loading census data from {csv_path}")
-        
+    def _load_model(self):
+        """Load trained model from disk"""
         try:
-            with open(csv_path, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                
-                for row in reader:
-                    # Filter for ZIP codes only
-                    geo_type = row.get('Geography Type', '').strip()
-                    geography = row.get('Geography', '').strip()
-                    
-                    if geo_type == 'ZIP Code' and len(geography) == 5 and geography.isdigit():
-                        try:
-                            zipcode = geography
-                            total_pop = int(row.get('Population - Total', '0').replace(',', ''))
-                            
-                            age_data = {
-                                'total': total_pop,
-                                'age_0_17': int(row.get('Population - Age 0-17', '0').replace(',', '')),
-                                'age_18_29': int(row.get('Population - Age 18-29', '0').replace(',', '')),
-                                'age_30_39': int(row.get('Population - Age 30-39', '0').replace(',', '')),
-                                'age_40_49': int(row.get('Population - Age 40-49', '0').replace(',', '')),
-                                'age_50_59': int(row.get('Population - Age 50-59', '0').replace(',', '')),
-                                'age_60_69': int(row.get('Population - Age 60-69', '0').replace(',', '')),
-                                'age_70_79': int(row.get('Population - Age 70-79', '0').replace(',', '')),
-                                'age_80_plus': int(row.get('Population - Age 80+', '0').replace(',', '')),
-                            }
-                            
-                            self.census_data[zipcode] = age_data
-                            count += 1
-                            if count <= 5:
-                                print(f"  Loaded ZIP {zipcode}: {total_pop:,} people")
-                            
-                        except (ValueError, KeyError) as e:
-                            continue
+            if self.model_path.exists() and self.scaler_path.exists():
+                with open(self.model_path, 'rb') as f:
+                    self.model = pickle.load(f)
+                with open(self.scaler_path, 'rb') as f:
+                    self.scaler = pickle.load(f)
+                print(f"✓ Model loaded from {self.model_path}")
+                return True
         except Exception as e:
-            print(f"ERROR reading CSV: {e}")
-            return {}
+            print(f"Error loading model: {e}")
         
-        print(f"\nTotal: {len(self.census_data)} ZIP codes loaded\n")
-        return self.census_data
+        return False
     
+    def _extract_features(self, building_data, area_km2, zipcode=None, lat=None, lon=None):
+        """Extract features from building data for ML model"""
+        features = []
+        
+        # Feature 1-9: Building counts by type
+        building_types = ['residential', 'apartments', 'commercial', 'office', 
+                         'industrial', 'retail', 'hotel', 'house', 'public']
+        
+        for btype in building_types:
+            features.append(building_data.get(btype, 0))
+        
+        # Feature 10: Total buildings
+        total_buildings = sum(building_data.values())
+        features.append(total_buildings)
+        
+        # Feature 11: Area in km²
+        features.append(area_km2)
+        
+        # Feature 12: Building density (buildings per km²)
+        density = total_buildings / area_km2 if area_km2 > 0 else 0
+        features.append(density)
+        
+        # Feature 13: Residential ratio
+        residential = building_data.get('residential', 0) + building_data.get('apartments', 0) + building_data.get('house', 0)
+        residential_ratio = residential / total_buildings if total_buildings > 0 else 0
+        features.append(residential_ratio)
+        
+        # Feature 14: Commercial ratio
+        commercial = building_data.get('commercial', 0) + building_data.get('office', 0) + building_data.get('retail', 0)
+        commercial_ratio = commercial / total_buildings if total_buildings > 0 else 0
+        features.append(commercial_ratio)
+        
+        # Feature 15-16: Location (if provided, normalized)
+        if lat is not None and lon is not None:
+            # Normalize to 0-1 range roughly
+            features.append((lat + 90) / 180)  # Latitude normalized
+            features.append((lon + 180) / 360)  # Longitude normalized
+        else:
+            features.append(0.5)
+            features.append(0.5)
+        
+        return np.array([features])
     
-    def get_buildings_from_osm(self, lat, lon, radius_meters=1000):
-        """Query OSM for buildings with caching"""
-        cache_key = self._get_cache_key('buildings', lat, lon, radius_meters)
-        
-        # Check cache first
-        if cache_key in self.api_cache:
-            cached = self.api_cache[cache_key]
-            print(f"\nQuerying OSM for buildings around ({lat}, {lon})... (cached)")
-            print(f"Found {cached['total']} buildings")
-            if cached['counts']:
-                print(f"Building type breakdown: {cached['counts']}")
-            return cached['counts'], cached['total']
-        
-        overpass_url = "http://overpass-api.de/api/interpreter"
-        
-        overpass_query = f"""
-        [out:json];
-        (
-          way["building"](around:{radius_meters},{lat},{lon});
-          relation["building"](around:{radius_meters},{lat},{lon});
-        );
-        out body;
+    def train(self, training_samples):
         """
+        Train the neural network model
         
-        print(f"\nQuerying OSM for buildings around ({lat}, {lon})...")
+        Args:
+            training_samples: List of dicts with keys:
+                - building_data: dict of building counts by type
+                - area_km2: area in square kilometers
+                - actual_population: ground truth population
+                - zipcode: (optional) ZIP code
+                - lat: (optional) latitude
+                - lon: (optional) longitude
+        """
+        if len(training_samples) < 5:
+            print(f"Warning: Only {len(training_samples)} samples. Recommend at least 10 for good training.")
+        
+        X = []
+        y = []
+        
+        print(f"\nTraining ML model with {len(training_samples)} samples...")
+        print("-" * 70)
+        
+        for sample in training_samples:
+            features = self._extract_features(
+                sample['building_data'],
+                sample['area_km2'],
+                sample.get('zipcode'),
+                sample.get('lat'),
+                sample.get('lon')
+            )
+            X.append(features[0])
+            y.append(sample['actual_population'])
+            
+            print(f"  Sample {len(y)}: {sample['actual_population']:,} people")
+        
+        X = np.array(X)
+        y = np.array(y)
+        
+        # Normalize features
+        self.scaler = StandardScaler()
+        X_scaled = self.scaler.fit_transform(X)
+        
+        # Create and train neural network
+        self.model = MLPRegressor(
+            hidden_layer_sizes=(128, 64, 32),  # 3 hidden layers
+            max_iter=1000,
+            learning_rate_init=0.001,
+            random_state=42,
+            verbose=True
+        )
+        
+        self.model.fit(X_scaled, y)
+        
+        # Save the trained model
+        self._save_model()
+        
+        # Calculate R² score
+        score = self.model.score(X_scaled, y)
+        print(f"\n✓ Model trained successfully")
+        print(f"✓ R² Score: {score:.4f} (1.0 is perfect)")
+        
+        return self.model
+    
+    def predict(self, building_data, area_km2, zipcode=None, lat=None, lon=None):
+        """
+        Predict population using trained ML model
+        
+        Returns: predicted population or None if model not trained
+        """
+        if self.model is None or self.scaler is None:
+            print("[WARNING] ML model not trained. Using formula-based estimation.")
+            return None
         
         try:
-            response = requests.get(overpass_url, params={'data': overpass_query}, timeout=30)
-            data = response.json()
+            features = self._extract_features(building_data, area_km2, zipcode, lat, lon)
+            features_scaled = self.scaler.transform(features)
+            prediction = self.model.predict(features_scaled)[0]
             
-            buildings = data.get('elements', [])
-            building_types = []
-            
-            for building in buildings:
-                tags = building.get('tags', {})
-                building_type = tags.get('building', 'residential')
-                
-                if building_type == 'yes':
-                    building_type = 'residential'
-                elif building_type == 'apartment':
-                    building_type = 'apartments'
-                
-                building_types.append(building_type)
-            
-            building_counts = Counter(building_types)
-            result_dict = dict(building_counts)
-            total = len(buildings)
-            
-            # Cache the result
-            self.api_cache[cache_key] = {
-                'counts': result_dict,
-                'total': total
-            }
-            self._save_api_cache()
-            
-            print(f"Found {total} buildings")
-            if result_dict:
-                print(f"Building type breakdown: {result_dict}")
-            
-            return result_dict, total
-            
+            # Ensure non-negative prediction
+            return max(0, round(prediction))
+        
         except Exception as e:
-            print(f"Error querying OSM: {e}")
-            # Cache empty result
-            self.api_cache[cache_key] = {'counts': {}, 'total': 0}
-            self._save_api_cache()
-            return {}, 0
-    
-    
-    def get_zipcode_from_location(self, lat, lon):
-        """Get zipcode from location coordinates with caching"""
-        cache_key = self._get_cache_key('zipcode', lat, lon)
-        
-        # Check cache first
-        if cache_key in self.api_cache:
-            cached = self.api_cache[cache_key]
-            if cached:
-                print(f"Zipcode (cached): {cached}")
-            else:
-                print("No ZIP code found for this location (cached)")
-            return cached
-        
-        nominatim_url = "https://nominatim.openstreetmap.org/reverse"
-        
-        params = {
-            'lat': lat,
-            'lon': lon,
-            'format': 'json',
-            'addressdetails': 1
+            print(f"[ERROR] Prediction failed: {e}")
+            return None
+
+
+# Example usage and helper functions
+def create_sample_training_data():
+    """Create synthetic training data from typical Chicago neighborhoods"""
+    training_data = [
+        {
+            'building_data': {'residential': 150, 'apartments': 20, 'commercial': 30},
+            'area_km2': 1.5,
+            'actual_population': 850,
+            'zipcode': '60601',
+            'lat': 41.8781,
+            'lon': -87.6298
+        },
+        {
+            'building_data': {'residential': 200, 'apartments': 50, 'commercial': 15},
+            'area_km2': 2.0,
+            'actual_population': 1500,
+            'zipcode': '60614',
+            'lat': 41.9212,
+            'lon': -87.6567
+        },
+        {
+            'building_data': {'residential': 120, 'apartments': 15, 'commercial': 20},
+            'area_km2': 1.2,
+            'actual_population': 650,
+            'zipcode': '60605',
+            'lat': 41.7943,
+            'lon': -87.5907
+        },
+        {
+            'building_data': {'residential': 180, 'apartments': 30, 'commercial': 25},
+            'area_km2': 1.8,
+            'actual_population': 1100,
+            'zipcode': '60610',
+            'lat': 41.8912,
+            'lon': -87.6127
+        },
+        {
+            'building_data': {'residential': 250, 'apartments': 60, 'commercial': 40},
+            'area_km2': 2.5,
+            'actual_population': 2000,
+            'zipcode': '60602',
+            'lat': 41.8850,
+            'lon': -87.6350
+        },
+        {
+            'building_data': {'residential': 100, 'apartments': 10, 'commercial': 10},
+            'area_km2': 1.0,
+            'actual_population': 500,
+            'zipcode': '60604',
+            'lat': 41.8750,
+            'lon': -87.6400
+        },
+        {
+            'building_data': {'residential': 300, 'apartments': 80, 'commercial': 50},
+            'area_km2': 3.0,
+            'actual_population': 2500,
+            'zipcode': '60611',
+            'lat': 41.9050,
+            'lon': -87.6200
+        },
+        {
+            'building_data': {'residential': 160, 'apartments': 25, 'commercial': 20},
+            'area_km2': 1.6,
+            'actual_population': 900,
+            'zipcode': '60603',
+            'lat': 41.8790,
+            'lon': -87.6480
         }
-        
-        headers = {
-            'User-Agent': 'PopulationDensityModel/1.0'
-        }
-        
-        print(f"\nGetting ZIP code for location ({lat}, {lon})...")
-        
-        try:
-            response = requests.get(nominatim_url, params=params, headers=headers, timeout=10)
-            data = response.json()
-            
-            address = data.get('address', {})
-            zipcode = address.get('postcode', '')
-            
-            # Cache the result
-            self.api_cache[cache_key] = zipcode or None
-            self._save_api_cache()
-            
-            if zipcode:
-                print(f"Found ZIP code: {zipcode}")
-                return zipcode
-            else:
-                print("No ZIP code found for this location")
-                return None
-                
-        except Exception as e:
-            print(f"Error getting ZIP code: {e}")
-            # Cache the error result
-            self.api_cache[cache_key] = None
-            self._save_api_cache()
-            return None
-    
-    
-    def estimate_population(self, area_km2, buildings_data, location=None):
-        """Estimate population using ML model (if available) or formula-based approach"""
-        if not buildings_data:
-            print("No building data available")
-            return None
-        
-        lat = location.get('lat') if location else None
-        lon = location.get('lon') if location else None
-        zipcode = location.get('zipcode') if location else None
-        
-        # Try ML prediction first if enabled
-        if self.use_ml and self.ml_model is not None:
-            print("\n[Using Neural Network ML Model]")
-            ml_prediction = self.ml_model.predict(buildings_data, area_km2, zipcode, lat, lon)
-            
-            if ml_prediction is not None:
-                # Calculate density and breakdown even for ML
-                total_population = ml_prediction
-                density = total_population / area_km2 if area_km2 > 0 else 0
-                
-                # Still calculate breakdown for reference
-                breakdown = {}
-                for building_type, count in buildings_data.items():
-                    occupancy = self.BUILDING_OCCUPANCY.get(building_type, 2.5)
-                    pop = count * occupancy * self.chi_factor
-                    breakdown[building_type] = {
-                        'count': count,
-                        'occupancy': occupancy,
-                        'population': round(pop, 1)
-                    }
-                
-                return {
-                    'total_population': total_population,
-                    'density': round(density, 2),
-                    'breakdown': breakdown,
-                    'total_buildings': sum(buildings_data.values()),
-                    'area_km2': area_km2,
-                    'estimation_method': 'Neural Network ML'
-                }
-        
-        # Fall back to formula-based approach
-        print("\n[Using Formula-Based Estimation]")
-        total_population = 0
-        total_buildings = 0
-        breakdown = {}
-        
-        for building_type, count in buildings_data.items():
-            occupancy = self.BUILDING_OCCUPANCY.get(building_type, 2.5)
-            pop = count * occupancy * self.chi_factor
-            
-            breakdown[building_type] = {
-                'count': count,
-                'occupancy': occupancy,
-                'population': round(pop, 1)
-            }
-            
-            total_population += pop
-            total_buildings += count
-        
-        density = total_population / area_km2 if area_km2 > 0 else 0
-        
-        return {
-            'total_population': round(total_population),
-            'density': round(density, 2),
-            'breakdown': breakdown,
-            'total_buildings': total_buildings,
-            'area_km2': area_km2,
-            'estimation_method': 'Formula-Based'
-        }
-    
-    def estimate_for_location(self, lat, lon, radius_meters=1000):
-        print("\n" + "="*70)
-        print("POPULATION DENSITY ESTIMATION WORKFLOW")
-        print("="*70)
-        
-        zipcode = self.get_zipcode_from_location(lat, lon)
-        
-        if not zipcode:
-            print("Cannot proceed without ZIP code")
-            return None
-        
-        buildings_data, total_buildings = self.get_buildings_from_osm(lat, lon, radius_meters)
-        
-        if not buildings_data:
-            print("No buildings found in this area")
-            return None
-        
-        area_km2 = (3.14159 * (radius_meters/1000) ** 2)
-        
-        location = {
-            'lat': lat,
-            'lon': lon,
-            'zipcode': zipcode
-        }
-        
-        result = self.estimate_population(area_km2, buildings_data, location)
-        
-        if not result:
-            return None
-        
-        result['zipcode'] = zipcode
-        result['location'] = {'lat': lat, 'lon': lon}
-        result['radius_meters'] = radius_meters
-        
-        if zipcode in self.census_data:
-            census = self.census_data[zipcode]
-            result['actual_population'] = census['total']
-            result['difference'] = result['total_population'] - census['total']
-            result['percent_error'] = round(abs(result['difference']) / census['total'] * 100, 2) if census['total'] > 0 else 0
-            result['accuracy'] = round(100 - result['percent_error'], 2)
-            
-            print(f"\nCensus data found for ZIP {zipcode}")
-            print(f"  Actual population: {census['total']:,}")
-        else:
-            print(f"\nNo census data available for ZIP {zipcode}")
-        
-        return result
+    ]
+    return training_data
 
-
-
-
-def run_interactive():
-    """Interactive mode for user input with validation"""
-    print("\n" + "="*70)
-    print("POPULATION DENSITY MODEL - INTERACTIVE MODE")
-    print("="*70)
-    
-    model = PopulationDensityModel(chi_factor=1.0)
-    
-    print("\nStep 1: Load Census Data")
-    print("-"*70)
-    csv_path = Path(__file__).parent / 'chi_pop.csv'
-    model.load_census_data(str(csv_path))
-    
-    print("\n\nStep 2: Enter Location Information")
-    print("-"*70)
-    print("Example locations:")
-    print("  Downtown Chicago:    41.8781, -87.6298")
-    print("  Lincoln Park:        41.9212, -87.6567")
-    print("  Hyde Park:           41.7943, -87.5907")
-    print()
-    
-    # Input validation loop
-    valid_input = False
-    lat = None
-    lon = None
-    radius_meters = 1000
-    
-    while not valid_input:
-        try:
-            lat_input = input("Enter Latitude (e.g., 41.8781): ").strip()
-            if not lat_input:
-                print("[ERROR] Latitude cannot be empty. Please enter a valid number.")
-                continue
-            
-            lon_input = input("Enter Longitude (e.g., -87.6298): ").strip()
-            if not lon_input:
-                print("[ERROR] Longitude cannot be empty. Please enter a valid number.")
-                continue
-            
-            # Convert to float
-            lat = float(lat_input)
-            lon = float(lon_input)
-            
-            # Validate ranges (rough global bounds)
-            if lat < -90 or lat > 90:
-                print(f"[ERROR] Latitude must be between -90 and 90. Got: {lat}")
-                lat = None
-                lon = None
-                continue
-            
-            if lon < -180 or lon > 180:
-                print(f"[ERROR] Longitude must be between -180 and 180. Got: {lon}")
-                lat = None
-                lon = None
-                continue
-            
-            # Get radius
-            radius_input = input("Enter Radius in meters (default 1000): ").strip()
-            
-            if radius_input:
-                radius_meters = int(radius_input)
-                if radius_meters <= 0:
-                    print("[ERROR] Radius must be greater than 0.")
-                    lat = None
-                    lon = None
-                    continue
-                if radius_meters > 50000:
-                    print("[WARNING] Radius is very large (>50km). This will take longer and may hit API limits.")
-                    confirm = input("Continue anyway? (y/n): ").strip().lower()
-                    if confirm != 'y':
-                        lat = None
-                        lon = None
-                        continue
-            else:
-                radius_meters = 1000
-            
-            # All validations passed
-            valid_input = True
-            
-        except ValueError as e:
-            print(f"[ERROR] Invalid input: {e}")
-            print("Please enter valid numbers. Example:")
-            print("  Latitude: 41.8781")
-            print("  Longitude: -87.6298")
-            print("  Radius: 1000")
-            print()
-            continue
-        except KeyboardInterrupt:
-            print("\n\nExiting...")
-            return
-    
-    # All inputs validated, proceed with estimation
-    print("\n\nStep 3: Running Population Estimation")
-    print("-"*70)
-    print(f"Location: ({lat:.4f}, {lon:.4f})")
-    print(f"Search Radius: {radius_meters}m")
-    print("Fetching building data from OpenStreetMap...")
-    print()
-    
-    result = model.estimate_for_location(lat, lon, radius_meters=radius_meters)
-    
-    if result:
-        print("\n" + "="*70)
-        print("RESULTS")
-        print("="*70)
-        print(f"Location: ({result['location']['lat']:.4f}, {result['location']['lon']:.4f})")
-        print(f"ZIP Code: {result['zipcode']}")
-        print(f"Search Radius: {result['radius_meters']}m")
-        print(f"Area: {result['area_km2']:.2f} km²")
-        print(f"\nBuildings Found: {result['total_buildings']}")
-        print(f"Estimated Population: {result['total_population']:,}")
-        print(f"Population Density: {result['density']:.2f} people/km²")
-        print(f"Estimation Method: {result.get('estimation_method', 'Formula-Based')}")
-        
-        if 'actual_population' in result:
-            print(f"\nCensus Comparison:")
-            print(f"  Census Population: {result['actual_population']:,}")
-            print(f"  Estimation Error: {result['percent_error']:.2f}%")
-            print(f"  Accuracy: {result['accuracy']:.2f}%")
-        else:
-            print(f"\n[WARNING] Census data not found for this ZIP code")
-        
-        print("\n" + "="*70)
-    else:
-        print("[ERROR] Failed to estimate population for this location")
-        print("This could be due to:")
-        print("  - No buildings found in the search area")
-        print("  - Unable to determine ZIP code for this location")
-        print("  - API connection issues")
-
-
-def run_test():
-    print("\n")
-    print("="*70)
-    print("POPULATION DENSITY MODEL - TEST MODE")
-    print("="*70)
-    
-    model = PopulationDensityModel(chi_factor=1.0)
-    
-    print("\nStep 1: Load Census Data")
-    print("-"*70)
-    csv_path = Path(__file__).parent / 'chi_pop.csv'
-    model.load_census_data(str(csv_path))
-    
-    print("\n\nStep 2: Test Location (Downtown Chicago)")
-    print("-"*70)
-    lat = 41.8781
-    lon = -87.6298
-    print(f"Location: ({lat}, {lon})")
-    
-    print("\n\nStep 3: Complete Estimation Workflow")
-    print("-"*70)
-    result = model.estimate_for_location(lat, lon, radius_meters=1000)
-    
-    if result:
-        print("\n" + "="*70)
-        print("FINAL RESULTS")
-        print("="*70)
-        print(f"Location: ({result['location']['lat']}, {result['location']['lon']})")
-        print(f"ZIP Code: {result['zipcode']}")
-        print(f"Search Radius: {result['radius_meters']}m")
-        print(f"Area: {result['area_km2']:.2f} km²")
-        print(f"\nBuildings Found: {result['total_buildings']}")
-        print(f"Estimated Population: {result['total_population']:,}")
-        print(f"Population Density: {result['density']:.2f} people/km²")
-        
-        if 'actual_population' in result:
-            print(f"\nComparison with Census:")
-            print(f"  Actual: {result['actual_population']:,}")
-            print(f"  Error: {result['percent_error']}%")
-            print(f"  Accuracy: {result['accuracy']}%")
 
 if __name__ == "__main__":
-    import sys
+    print("=" * 70)
+    print("POPULATION ML MODEL - STANDALONE TEST")
+    print("=" * 70)
     
-    if len(sys.argv) > 1 and sys.argv[1].lower() == '--interactive':
-        run_interactive()
+    # Create and train model
+    ml_model = PopulationMLModel()
+    
+    # Check if already trained
+    if ml_model.model is None:
+        print("\nNo trained model found. Creating training data...")
+        training_samples = create_sample_training_data()
+        ml_model.train(training_samples)
     else:
-        print("\nQUICK START OPTIONS:")
-        print("  Run test mode: python population_model.py")
-        print("  Interactive mode: python population_model.py --interactive")
-        print()
-        run_test()
+        print("\nModel already trained. Ready for predictions.")
+    
+    # Test predictions
+    print("\n" + "=" * 70)
+    print("TEST PREDICTIONS")
+    print("=" * 70)
+    
+    test_cases = [
+        {'building_data': {'residential': 140, 'apartments': 18, 'commercial': 28}, 'area_km2': 1.4},
+        {'building_data': {'residential': 210, 'apartments': 55, 'commercial': 12}, 'area_km2': 2.1},
+        {'building_data': {'residential': 280, 'apartments': 70, 'commercial': 45}, 'area_km2': 2.8},
+    ]
+    
+    for i, test in enumerate(test_cases, 1):
+        pred = ml_model.predict(**test)
+        print(f"Test {i}: Predicted Population = {pred:,} people")

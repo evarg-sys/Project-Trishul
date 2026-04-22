@@ -167,10 +167,15 @@ export default function App() {
   const [dispatchData,    setDispatchData]    = useState([]);
   const [analyticsData,   setAnalyticsData]   = useState(null);
   const [hospitals,       setHospitals]       = useState([]);
+  const [showResources,   setShowResources]   = useState(false);
+  const [mapView,         setMapView]         = useState("incidents"); // "incidents" | "resources" | "dispatch"
+  const [selectedIncidentId, setSelectedIncidentId] = useState(null);
+  const [dispatchEtas,    setDispatchEtas]    = useState({}); // {dispatchId: secondsRemaining}
   const [newIncidentMode, setNewIncidentMode] = useState(null); // null | "type" | "map"
   const [newPin,          setNewPin]          = useState(null);
   const [lastIncidentCoords, setLastIncidentCoords] = useState(null);
   const [incidentListPage, setIncidentListPage] = useState(0);
+  const [activeIncidentPage, setActiveIncidentPage] = useState(0);
   const INCIDENTS_PER_PAGE = 10; // persists pin on map
 const DISASTER_TYPES = [
   { value: "fire",        label: "🔥 Fire",        color: "#e63946" },
@@ -178,7 +183,7 @@ const DISASTER_TYPES = [
   { value: "earthquake",  label: "🏚️ Earthquake",  color: "#ff9500" },
   { value: "chemical",    label: "☣️ Chemical",    color: "#8b5cf6" },
   { value: "medical",     label: "🚑 Medical",     color: "#3ecf72" },
-  { value: "traffic",     label: "🚗 Traffic Accident",     color: "#f59e0b" },
+  { value: "traffic",     label: "🚗 Traffic",     color: "#f59e0b" },
 ];
 
 function DisasterTypeButtons({ value, onChange }) {
@@ -216,6 +221,25 @@ function DisasterTypeButtons({ value, onChange }) {
     if (view === "analytics") fetchAnalytics();
     if (view === "resources") { fetchHospitals(); fetchFireStations(); }
   }, [view]);
+
+  // Auto-refresh dispatch view every second for ETA countdown
+  useEffect(() => {
+    if (mapView !== "dispatch") return;
+    const ticker = setInterval(() => {
+      setDispatchEtas(prev => ({ ...prev, _tick: Date.now() }));
+    }, 1000);
+    return () => clearInterval(ticker);
+  }, [mapView]);
+
+  // Auto-select first incident when switching to dispatch view
+  useEffect(() => {
+    if (mapView === "dispatch" && activeDisasters.length > 0 && !selectedIncidentId) {
+      const top = [...activeDisasters].sort((a, b) => b.priority_score - a.priority_score)[0];
+      setSelectedIncidentId(top.id);
+      getDispatchDecisions(top.id).then(r => setDispatchData(r.data.decisions || []));
+      if (top.latitude && top.longitude) setLastIncidentCoords([top.latitude, top.longitude]);
+    }
+  }, [mapView, activeDisasters]);
 
   useEffect(() => { fetchFireStations(); }, []);
 
@@ -486,7 +510,7 @@ function DisasterTypeButtons({ value, onChange }) {
               {/* Inline map */}
               <div style={{ height: "320px", borderRadius: "8px", overflow: "hidden", marginBottom: "14px", border: "1px solid var(--border)" }}>
                 <MapContainer center={CHICAGO_CENTER} zoom={11} style={{ height: "100%", width: "100%" }}>
-                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
+                  <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
                   <MapClickHandler onMapClick={handleMapClick} />
                   {titlePin && (
                     <Marker position={[titlePin.lat, titlePin.lng]} icon={pinIcon}>
@@ -531,30 +555,85 @@ function DisasterTypeButtons({ value, onChange }) {
     <div className="app-root">
       <button className="back-btn" onClick={() => setShowTitlePage(true)}>← Home</button>
 
-      {/* MAP */}
-      <div className="map-panel glass">
-        <MapContainer center={CHICAGO_CENTER} zoom={CHICAGO_ZOOM} style={{ height: "100%", width: "100%" }}>
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
-          <GeoJSON data={countriesData} onEachFeature={onEachCountry} />
+      {/* MAP AREA */}
+      <div className="map-panel glass" style={{ display: "flex", flexDirection: "column" }}>
 
-          {/* Dummy station pins (Deepikka) */}
-          {DUMMY_STATIONS.map(station => (
-            <Marker key={station.id} position={[station.lat, station.lng]} icon={stationIcon}>
+        {/* ── View Tab Switcher ── */}
+        <div style={{
+          display: "flex", gap: "6px", padding: "8px 10px",
+          background: "rgba(0,0,0,0.4)", borderBottom: "1px solid var(--border)",
+          flexShrink: 0,
+        }}>
+          {[
+            { id: "incidents", label: "🗺️ Incidents" },
+            { id: "resources", label: "🏥 Resources" },
+            { id: "dispatch",  label: "🎛️ Dispatch" },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => {
+              setMapView(tab.id);
+              if (tab.id === "resources") { fetchFireStations(); fetchHospitals(); }
+              if (tab.id === "dispatch") { fetchActiveDisasters(); }
+            }} style={{
+              padding: "5px 14px", fontSize: "0.72rem", letterSpacing: "0.06em",
+              borderRadius: "20px", cursor: "pointer", fontFamily: "var(--font-mono)",
+              background: mapView === tab.id ? "rgba(255,180,50,0.15)" : "rgba(0,0,0,0.2)",
+              border: `1px solid ${mapView === tab.id ? "var(--amber)" : "var(--border)"}`,
+              color: mapView === tab.id ? "var(--amber)" : "var(--text-dim)",
+              transition: "all 0.15s ease",
+            }}>{tab.label}</button>
+          ))}
+        </div>
+
+        <MapContainer center={CHICAGO_CENTER} zoom={CHICAGO_ZOOM} style={{ flex: 1, width: "100%" }}>
+          <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
+          {mapView === "incidents" && <GeoJSON data={countriesData} onEachFeature={onEachCountry} />}
+
+          {/* Resources overlay — shown in resources view OR when toggled in incidents view */}
+          {(mapView === "resources") && fireStations.map(station => (
+            <Marker key={`fs-${station.id}`} position={[station.latitude, station.longitude]} icon={L.divIcon({
+              className: "",
+              html: `<div style="position:relative;width:22px;height:22px;display:flex;align-items:center;justify-content:center;">
+                <div style="position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(230,57,70,0.6);animation:pinPulse 2.4s ease-out infinite;pointer-events:none;"></div>
+                <div style="width:10px;height:10px;border-radius:50%;background:#e63946;box-shadow:0 0 0 2px rgba(230,57,70,0.25),0 0 8px rgba(230,57,70,0.7);position:relative;z-index:2;"></div>
+              </div>`,
+              iconSize: [22, 22], iconAnchor: [11, 11], tooltipAnchor: [16, 0],
+            })}>
               <Tooltip direction="right" offset={[14, 0]} opacity={1} className="station-tooltip">
                 <div className="station-tooltip-inner">
-                  <div className="station-tooltip-name">{station.name}</div>
+                  <div className="station-tooltip-name">🚒 {station.name}</div>
                   <div className="station-tooltip-divider" />
                   <div className="station-tooltip-row">
                     <span className="station-tooltip-icon">🚒</span>
-                    <span className="station-tooltip-label">Fire Trucks: {station.fireTrucks}</span>
+                    <span className="station-tooltip-label">Trucks: {station.available_trucks}</span>
                   </div>
+                  <div className="station-tooltip-row">
+                    <span className="station-tooltip-icon" style={{ color: station.operational ? "#3ecf72" : "#e63946" }}>●</span>
+                    <span className="station-tooltip-label">{station.operational ? "Operational" : "Offline"}</span>
+                  </div>
+                </div>
+              </Tooltip>
+            </Marker>
+          ))}
+          {(mapView === "resources") && hospitals.map(hospital => (
+            <Marker key={`h-${hospital.id}`} position={[hospital.latitude, hospital.longitude]} icon={L.divIcon({
+              className: "",
+              html: `<div style="position:relative;width:22px;height:22px;display:flex;align-items:center;justify-content:center;">
+                <div style="position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(29,122,255,0.6);animation:pinPulse 2.4s ease-out infinite;pointer-events:none;"></div>
+                <div style="width:10px;height:10px;border-radius:50%;background:#1d7aff;box-shadow:0 0 0 2px rgba(29,122,255,0.25),0 0 8px rgba(29,122,255,0.7);position:relative;z-index:2;"></div>
+              </div>`,
+              iconSize: [22, 22], iconAnchor: [11, 11], tooltipAnchor: [16, 0],
+            })}>
+              <Tooltip direction="right" offset={[14, 0]} opacity={1} className="station-tooltip">
+                <div className="station-tooltip-inner">
+                  <div className="station-tooltip-name">🏥 {hospital.name}</div>
+                  <div className="station-tooltip-divider" />
                   <div className="station-tooltip-row">
                     <span className="station-tooltip-icon">🚑</span>
-                    <span className="station-tooltip-label">Ambulances: {station.ambulances}</span>
+                    <span className="station-tooltip-label">Ambulances: {hospital.available_ambulances}</span>
                   </div>
                   <div className="station-tooltip-row">
-                    <span className="station-tooltip-icon">🚧</span>
-                    <span className="station-tooltip-label">Other Services: {station.others}</span>
+                    <span className="station-tooltip-icon" style={{ color: hospital.operational ? "#3ecf72" : "#e63946" }}>●</span>
+                    <span className="station-tooltip-label">{hospital.operational ? "Operational" : "Offline"}</span>
                   </div>
                 </div>
               </Tooltip>
@@ -566,8 +645,8 @@ function DisasterTypeButtons({ value, onChange }) {
             <FlyTo coords={[analysisResult.latitude, analysisResult.longitude]} />
           )}
 
-          {/* Incident pin — persists even after navigating away */}
-          {lastIncidentCoords && (
+          {/* Incident pin — shown in incidents and dispatch views */}
+          {lastIncidentCoords && mapView !== "resources" && (
             <Marker position={lastIncidentCoords} icon={incidentIcon}>
               <Popup>
                 <b>⚠️ {analysisResult?.disaster_type?.toUpperCase() || "INCIDENT"}</b><br />
@@ -578,10 +657,12 @@ function DisasterTypeButtons({ value, onChange }) {
           )}
 
           {/* Dispatch markers + routes */}
-          {dispatchData.map((dispatch, i) => {
+          {mapView !== "resources" && dispatchData.map((dispatch, i) => {
             const isFire = dispatch.dispatch_type === "fire";
             const coords = dispatch.station_coords;
             const routeCoords = dispatch.route_data?.route_coords || [];
+            // In dispatch view, dim stations that are dispatched
+            const isDispatchView = mapView === "dispatch";
             return coords ? (
               <span key={i}>
                 <Marker position={[coords[0], coords[1]]} icon={isFire ? fireIcon : hospitalIcon}>
@@ -593,7 +674,11 @@ function DisasterTypeButtons({ value, onChange }) {
                 {routeCoords.length > 1 && (
                   <Polyline
                     positions={routeCoords}
-                    pathOptions={{ color: isFire ? "#e63946" : "#1d7aff", weight: 4, opacity: 0.8 }}
+                    pathOptions={{
+                      color: isFire ? "#e63946" : "#1d7aff",
+                      weight: isDispatchView ? 5 : 4,
+                      opacity: isDispatchView ? 1.0 : 0.8,
+                    }}
                   />
                 )}
               </span>
@@ -610,7 +695,33 @@ function DisasterTypeButtons({ value, onChange }) {
             <button onClick={() => { setModal("incidentList"); setIncidentListPage(0); fetchActiveDisasters(); fetchResolvedDisasters(); }}>Incident Lists</button>
             <button onClick={() => setView("incidents")}>Active Incidents</button>
             <button onClick={() => setView("resolved")}>Resolved Incidents</button>
-            <button onClick={() => setView("resources")}>Resources</button>
+            <button
+              onClick={() => {
+                setShowResources(v => !v);
+                if (!showResources) { fetchFireStations(); fetchHospitals(); }
+              }}
+              style={{ background: showResources ? "rgba(80,160,255,0.2)" : "", borderColor: showResources ? "var(--amber)" : "", position: "relative" }}
+            >
+              {showResources ? "🗺️ Hide Resources" : "🗺️ Resources"}
+              {showResources && fireStations.length > 0 && (
+                <span style={{
+                  marginLeft: "8px", fontSize: "0.65rem", padding: "1px 6px",
+                  borderRadius: "10px", background: "rgba(230,57,70,0.2)",
+                  color: "#e63946", border: "1px solid rgba(230,57,70,0.3)"
+                }}>
+                  🚒 {fireStations.length}
+                </span>
+              )}
+              {showResources && hospitals.length > 0 && (
+                <span style={{
+                  marginLeft: "4px", fontSize: "0.65rem", padding: "1px 6px",
+                  borderRadius: "10px", background: "rgba(29,122,255,0.2)",
+                  color: "#1d7aff", border: "1px solid rgba(29,122,255,0.3)"
+                }}>
+                  🏥 {hospitals.length}
+                </span>
+              )}
+            </button>
             <button onClick={() => setView("analytics")}>Analytics</button>
             <button onClick={() => setView("new")}>New Incident</button>
           </div>
@@ -626,41 +737,7 @@ function DisasterTypeButtons({ value, onChange }) {
             </div>
           )}
 
-          {view === "incidents" && (
-            <div key="incidents" className="view-content">
-              <h2>Active Incidents</h2>
-              {activeDisasters.length === 0
-                ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginTop: "8px" }}>No active incidents reported.</p>
-                : activeDisasters.map((d, i) => (
-                  <div key={d.id} className="incident-box"
-                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", animationDelay: `${i * 0.06}s` }}>
-                    <span onClick={() => setModal("severity")} style={{ cursor: "pointer", flex: 1, fontSize: "0.82rem" }}>
-                      <span style={{ color: "var(--amber)", fontWeight: "bold" }}>{d.disaster_type.toUpperCase()}</span>
-                      {" — "}{d.address}
-                      {d.priority_score != null && (
-                        <span style={{ marginLeft: "8px", color: "var(--amber-dim)", fontSize: "0.75rem" }}>
-                          P:{d.priority_score.toFixed(1)}
-                        </span>
-                      )}
-                    </span>
-                    <button className="resolve-btn" onClick={() => { setResolveTarget(d); setResolutionNotes(""); }}>
-                      Resolve
-                    </button>
-                  </div>
-                ))
-              }
-              <div style={{ marginTop: "14px", borderTop: "1px solid var(--border)", paddingTop: "12px" }}>
-                <p style={{ color: "var(--text-dim)", fontSize: "0.7rem", letterSpacing: "0.1em",
-                  textTransform: "uppercase", marginBottom: "6px" }}>Incident Details</p>
-                {Object.entries(INCIDENT_DETAIL_LABELS).map(([key, label], i) => (
-                  <div key={key} className="incident-box" onClick={() => setModal(key)}
-                    style={{ animationDelay: `${(activeDisasters.length + i) * 0.06}s` }}>
-                    {label}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Active incidents rendered as modal overlay below */}
 
           {view === "resolved" && (
             <div key="resolved" className="view-content">
@@ -668,15 +745,33 @@ function DisasterTypeButtons({ value, onChange }) {
               {resolvedDisasters.length === 0
                 ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginTop: "8px" }}>No resolved incidents yet.</p>
                 : resolvedDisasters.map((d, i) => (
-                  <div key={d.id} className="incident-box"
-                    style={{ borderLeftColor: "var(--green)", animationDelay: `${i * 0.06}s` }}>
-                    <strong style={{ color: "var(--green)" }}>{d.disaster_type.toUpperCase()}</strong>
-                    {" — "}{d.address}<br />
-                    <small style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
-                      Resolved: {d.resolved_at ? new Date(d.resolved_at).toLocaleString() : "—"}
-                    </small>
+                  <div key={d.id} style={{
+                    border: "1px solid var(--border)",
+                    borderLeft: "3px solid var(--green)",
+                    padding: "12px 14px", marginBottom: "8px", borderRadius: "6px",
+                    fontSize: "0.82rem",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <span style={{ color: "var(--green)", fontWeight: "bold" }}>
+                          {d.disaster_type.toUpperCase()}
+                        </span>
+                        {" — "}
+                        <span style={{ color: "var(--text)" }}>{d.address}</span>
+                      </div>
+                      <span style={{
+                        fontSize: "0.68rem", padding: "2px 8px", borderRadius: "4px",
+                        background: "rgba(62,207,114,0.1)", color: "var(--green)",
+                        border: "1px solid rgba(62,207,114,0.25)", whiteSpace: "nowrap", marginLeft: "10px",
+                      }}>resolved</span>
+                    </div>
+                    <div style={{ marginTop: "6px", color: "var(--text-dim)", fontSize: "0.72rem", display: "flex", gap: "14px" }}>
+                      <span>{d.resolved_at ? new Date(d.resolved_at).toLocaleString() : "—"}</span>
+                      {d.priority_score > 0 && <span>Priority: {d.priority_score.toFixed(0)}</span>}
+                      {d.severity_score > 0 && <span>Severity: {d.severity_score}</span>}
+                    </div>
                     {d.resolution_notes && (
-                      <p style={{ margin: "4px 0 0", fontSize: "0.78rem", color: "var(--text-dim)" }}>
+                      <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "var(--text-dim)" }}>
                         ↳ {d.resolution_notes}
                       </p>
                     )}
@@ -737,7 +832,7 @@ function DisasterTypeButtons({ value, onChange }) {
                   </p>
                   <div style={{ height: "200px", borderRadius: "8px", overflow: "hidden", marginBottom: "10px", border: "1px solid var(--border)" }}>
                     <MapContainer center={CHICAGO_CENTER} zoom={11} style={{ height: "100%", width: "100%" }}>
-                    <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
+                      <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution="© OpenStreetMap contributors © CARTO" />
                       <MapClickHandler onMapClick={handleNewMapClick} />
                       {newPin && (
                         <Marker position={[newPin.lat, newPin.lng]} icon={pinIcon}>
@@ -851,6 +946,108 @@ function DisasterTypeButtons({ value, onChange }) {
             </div>
           )}
 
+          {mapView === "dispatch" && (
+            <div key="dispatch" className="view-content">
+              <h2>🎛️ Dispatch Console</h2>
+
+              {/* Priority Queue */}
+              <div style={{ marginBottom: "14px" }}>
+                <p style={{ color: "var(--text-dim)", fontSize: "0.65rem", letterSpacing: "0.1em",
+                  textTransform: "uppercase", marginBottom: "8px" }}>Active Incidents — Priority Queue</p>
+                {activeDisasters.length === 0
+                  ? <p style={{ color: "var(--text-dim)", fontSize: "0.78rem" }}>No active incidents.</p>
+                  : [...activeDisasters].sort((a, b) => b.priority_score - a.priority_score).map((d, i) => (
+                    <div key={d.id}
+                      onClick={() => {
+                        setSelectedIncidentId(d.id);
+                        getDispatchDecisions(d.id).then(r => setDispatchData(r.data.decisions || []));
+                        if (d.latitude && d.longitude) setLastIncidentCoords([d.latitude, d.longitude]);
+                      }}
+                      style={{
+                        padding: "8px 12px", marginBottom: "6px", borderRadius: "6px",
+                        border: `1px solid ${selectedIncidentId === d.id ? "var(--amber)" : "var(--border)"}`,
+                        background: selectedIncidentId === d.id ? "rgba(255,180,50,0.08)" : "rgba(0,0,0,0.2)",
+                        cursor: "pointer", fontSize: "0.78rem",
+                      }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span>
+                          <span style={{ color: "var(--amber)", fontWeight: "bold", marginRight: "6px" }}>
+                            #{i + 1}
+                          </span>
+                          <span style={{ color: "var(--text)" }}>{d.disaster_type.toUpperCase()}</span>
+                        </span>
+                        <span style={{ color: "var(--amber-dim)", fontSize: "0.7rem" }}>
+                          P: {d.priority_score?.toFixed(0) || "—"}
+                        </span>
+                      </div>
+                      <div style={{ color: "var(--text-dim)", fontSize: "0.7rem", marginTop: "2px" }}>
+                        {d.address}
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+
+              {/* Selected Incident Dispatch Detail */}
+              {selectedIncidentId && dispatchData.length > 0 && (() => {
+                const incident = activeDisasters.find(d => d.id === selectedIncidentId);
+                return (
+                  <div>
+                    <p style={{ color: "var(--text-dim)", fontSize: "0.65rem", letterSpacing: "0.1em",
+                      textTransform: "uppercase", marginBottom: "8px" }}>Dispatched Units</p>
+                    {dispatchData.map((dispatch, i) => {
+                      const isFire = dispatch.dispatch_type === "fire";
+                      const etaKey = dispatch.id;
+                      // Calculate seconds remaining from dispatch time
+                      const dispatchedAt = new Date(dispatch.dispatched_at);
+                      const etaMs = dispatch.estimated_arrival_minutes * 60 * 1000;
+                      const elapsed = Date.now() - dispatchedAt.getTime();
+                      const remaining = Math.max(0, etaMs - elapsed);
+                      const mins = Math.floor(remaining / 60000);
+                      const secs = Math.floor((remaining % 60000) / 1000);
+                      const arrived = remaining === 0;
+                      return (
+                        <div key={i} style={{
+                          padding: "10px 12px", marginBottom: "8px", borderRadius: "6px",
+                          border: `1px solid ${isFire ? "rgba(230,57,70,0.3)" : "rgba(29,122,255,0.3)"}`,
+                          background: isFire ? "rgba(230,57,70,0.06)" : "rgba(29,122,255,0.06)",
+                        }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: "0.82rem", color: "var(--text)" }}>
+                              {isFire ? "🚒" : "🏥"} {dispatch.station_name}
+                            </span>
+                            <span style={{
+                              fontSize: "0.78rem", fontWeight: "bold",
+                              color: arrived ? "#3ecf72" : (isFire ? "#e63946" : "#1d7aff"),
+                            }}>
+                              {arrived ? "🟢 On Scene" : `⏱ ${mins}:${secs.toString().padStart(2, "0")}`}
+                            </span>
+                          </div>
+                          <div style={{ color: "var(--text-dim)", fontSize: "0.7rem", marginTop: "4px" }}>
+                            {dispatch.distance_km?.toFixed(1)} km · ETA {dispatch.estimated_arrival_minutes} min
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Resolve button */}
+                    {incident && (
+                      <button
+                        onClick={() => { setResolveTarget(incident); setResolutionNotes(""); }}
+                        style={{
+                          width: "100%", marginTop: "8px", padding: "10px",
+                          background: "rgba(62,207,114,0.1)", borderColor: "rgba(62,207,114,0.3)",
+                          color: "var(--green)", fontSize: "0.78rem",
+                        }}>
+                        ✓ Mark Incident Resolved
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {view === "analytics" && (
             <div key="analytics" className="view-content">
               <h2>Analytics</h2>
@@ -901,33 +1098,35 @@ function DisasterTypeButtons({ value, onChange }) {
           {view === "resources" && (
             <div key="resources" className="view-content">
               <h2>Resources</h2>
-              <div className="resource-top-buttons">
-                {Object.entries(RESOURCE_ICONS).map(([name, icon]) => (
-                  <button key={name} onClick={() => setResourceModal(name)}>{icon} {name}</button>
-                ))}
-              </div>
+              <p style={{ color: "var(--text-dim)", fontSize: "0.78rem", marginBottom: "14px" }}>
+                Click <strong style={{ color: "var(--amber)" }}>🗺️ Resources</strong> in the menu above to overlay all stations and hospitals on the map. Hover over any marker for details.
+              </p>
               <div className="glass resource-card">
                 <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.85rem",
                   letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: "var(--amber-dim)", marginBottom: "12px" }}>All Resources</h3>
+                  color: "var(--amber-dim)", marginBottom: "12px" }}>Summary</h3>
                 {[
-                  ["Fire Trucks Availability",  fireStations.reduce((s, x) => s + x.available_trucks, 0)],
-                  ["Ambulance Availability",    hospitals.reduce((s, x) => s + x.available_ambulances, 0)],
-                  ["Police Units Availability", "N/A"],
-                  ["Other Availability",        "N/A"],
-                  ["Total Availability",        fireStations.reduce((s, x) => s + x.available_trucks, 0) + hospitals.reduce((s, x) => s + x.available_ambulances, 0)],
+                  ["🚒 Fire Stations", fireStations.length],
+                  ["🏥 Hospitals", hospitals.length],
+                  ["🚒 Total Trucks", fireStations.reduce((s, x) => s + x.available_trucks, 0)],
+                  ["🚑 Total Ambulances", hospitals.reduce((s, x) => s + x.available_ambulances, 0)],
                 ].map(([lbl, val]) => (
                   <div className="resource-row" key={lbl}>
                     <label>{lbl}</label>
                     <input value={val} readOnly onChange={() => {}} />
                   </div>
                 ))}
-                <div className="resource-actions">
-                  <button>Assign</button>
-                  <button>Reserve</button>
-                  <button>Disable</button>
-                </div>
               </div>
+              <button
+                onClick={() => {
+                  setShowResources(true);
+                  fetchFireStations();
+                  fetchHospitals();
+                }}
+                style={{ marginTop: "12px", width: "100%", padding: "10px", background: "rgba(80,160,255,0.1)", borderColor: "rgba(80,160,255,0.3)", color: "#1d7aff" }}
+              >
+                🗺️ Show All on Map
+              </button>
             </div>
           )}
         </div>
@@ -935,7 +1134,7 @@ function DisasterTypeButtons({ value, onChange }) {
 
       {/* ── RESOLVE MODAL ── */}
       {resolveTarget && (
-        <div className="modal-overlay">
+        <div className="modal-overlay" style={{ zIndex: 1001 }}>
           <div className="modal glass">
             <h2>Resolve Incident</h2>
             <p style={{ color: "var(--text-dim)", fontSize: "0.82rem", marginBottom: "14px" }}>
@@ -985,6 +1184,111 @@ function DisasterTypeButtons({ value, onChange }) {
       )}
 
       {/* ── INCIDENT LIST FULL PAGE OVERLAY ── */}
+      {/* ── ACTIVE INCIDENTS MODAL ── */}
+      {view === "incidents" && (() => {
+        const totalPages = Math.ceil(activeDisasters.length / INCIDENTS_PER_PAGE);
+        const pageItems = activeDisasters.slice(
+          activeIncidentPage * INCIDENTS_PER_PAGE,
+          (activeIncidentPage + 1) * INCIDENTS_PER_PAGE
+        );
+        return (
+          <div style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)",
+            backdropFilter: "blur(8px)", zIndex: 999,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <div style={{
+              width: "680px", maxWidth: "92vw", maxHeight: "88vh",
+              background: "var(--bg-panel)", border: "1px solid var(--border)",
+              borderRadius: "12px", display: "flex", flexDirection: "column",
+              boxShadow: "0 0 0 1px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.6)",
+            }}>
+              {/* Header */}
+              <div style={{
+                padding: "20px 24px 14px", borderBottom: "1px solid var(--border)",
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+              }}>
+                <h2 style={{ fontFamily: "var(--font-display)", fontSize: "0.95rem",
+                  letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--amber)", margin: 0 }}>
+                  ▸ Active Incidents
+                </h2>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <span style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
+                    {activeDisasters.length} total
+                  </span>
+                  <button onClick={() => setView("country")} style={{
+                    padding: "5px 14px", fontSize: "0.7rem", background: "rgba(224,82,82,0.1)",
+                    borderColor: "rgba(224,82,82,0.3)", color: "var(--red)",
+                  }}>✕ Close</button>
+                </div>
+              </div>
+
+              {/* Incident rows */}
+              <div style={{ flex: 1, overflowY: "auto", padding: "12px 24px" }}>
+                {activeDisasters.length === 0
+                  ? <p style={{ color: "var(--text-dim)", fontSize: "0.8rem", marginTop: "16px" }}>No active incidents.</p>
+                  : pageItems.map((d, i) => (
+                    <div key={d.id} style={{
+                      border: "1px solid var(--border)",
+                      borderLeft: "3px solid var(--amber-dim)",
+                      padding: "12px 14px", marginBottom: "8px", borderRadius: "6px",
+                      fontSize: "0.82rem",
+                    }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <strong style={{ color: "var(--amber)" }}>{d.disaster_type.toUpperCase()}</strong>
+                          {" — "}
+                          <span style={{ color: "var(--text)" }}>{d.address}</span>
+                        </div>
+                        <button className="resolve-btn" onClick={() => { setResolveTarget(d); setResolutionNotes(""); }}
+                        style={{ flexShrink: 0 }}>
+                        Resolve
+                      </button>
+                    </div>
+                      <div style={{ marginTop: "4px", color: "var(--text-dim)", fontSize: "0.72rem", display: "flex", gap: "16px" }}>
+                        <span>{new Date(d.reported_at).toLocaleString()}</span>
+                        {d.priority_score > 0 && <span>Priority: {d.priority_score.toFixed(0)}</span>}
+                        {d.severity_score > 0 && <span>Severity: {d.severity_score}</span>}
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div style={{
+                  padding: "14px 24px", borderTop: "1px solid var(--border)",
+                  display: "flex", justifyContent: "center", alignItems: "center", gap: "8px",
+                }}>
+                  <button onClick={() => setActiveIncidentPage(p => Math.max(0, p - 1))}
+                    disabled={activeIncidentPage === 0}
+                    style={{ padding: "5px 14px", opacity: activeIncidentPage === 0 ? 0.4 : 1 }}>
+                    ← Prev
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <button key={i} onClick={() => setActiveIncidentPage(i)}
+                      style={{
+                        padding: "5px 10px", minWidth: "32px",
+                        background: i === activeIncidentPage ? "rgba(80,160,255,0.2)" : "rgba(255,180,50,0.05)",
+                        borderColor: i === activeIncidentPage ? "var(--amber)" : "var(--border)",
+                        color: i === activeIncidentPage ? "var(--amber)" : "var(--text-dim)",
+                      }}>
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button onClick={() => setActiveIncidentPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={activeIncidentPage === totalPages - 1}
+                    style={{ padding: "5px 14px", opacity: activeIncidentPage === totalPages - 1 ? 0.4 : 1 }}>
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {modal === "incidentList" && (() => {
         const allIncidents = [...activeDisasters, ...resolvedDisasters]
           .sort((a, b) => new Date(b.reported_at) - new Date(a.reported_at));
