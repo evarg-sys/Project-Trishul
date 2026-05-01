@@ -1,0 +1,65 @@
+{
+  "evaluation_date": "2026-04-30",
+  "total_eval_time_seconds": 0.1,
+  "classification": {
+    "n_samples": 60,
+    "cad_accuracy": 0.9,
+    "trishul_accuracy": 0.9833,
+    "cad_avg_latency_ms": 0.0062,
+    "trishul_avg_latency_ms": 0.0101,
+    "cad_precision": 0.9033,
+    "cad_recall": 0.9,
+    "cad_f1": 0.8948,
+    "trishul_precision": 0.9844,
+    "trishul_recall": 0.9833,
+    "trishul_f1": 0.9833
+  },
+  "latency": {
+    "cad_classification_ms": 0.013,
+    "trishul_classification_ms": 0.015,
+    "planning_ms": 0.042,
+    "routing_estimation_ms": 0.867,
+    "priority_scoring_ms": 0.172,
+    "trishul_full_pipeline_ms": 1.096
+  },
+  "routing": {
+    "avg_cad_eta_min": 2.526,
+    "avg_trishul_eta_min": 2.526,
+    "avg_fifo_wait_min": 12.0,
+    "avg_priority_wait_min": 3.0,
+    "priority_wait_savings_min": 9.0,
+    "n_incidents": 10
+  },
+  "case_study": {
+    "case_study_incidents": [
+      {
+        "incident_id": "CS-01",
+        "true_type": "fire",
+        "trishul_type": "fire",
+        "priority_score": 2021.0,
+        "dispatched_unit": "Engine-2",
+        "eta_minutes": 2.02,
+        "correct_class": 1
+      },
+      {
+        "incident_id": "CS-02",
+        "true_type": "flood",
+        "trishul_type": "flood",
+        "priority_score": 199.9,
+        "dispatched_unit": "Rescue-2",
+        "eta_minutes": 2.46,
+        "correct_class": 1
+      },
+      {
+        "incident_id": "CS-03",
+        "true_type": "earthquake",
+        "trishul_type": "earthquake",
+        "priority_score": 103.1,
+        "dispatched_unit": "Ambulance-1",
+        "eta_minutes": 1.7,
+        "correct_class": 1
+      }
+    ],
+    "classification_accuracy": 1.0
+  }
+}

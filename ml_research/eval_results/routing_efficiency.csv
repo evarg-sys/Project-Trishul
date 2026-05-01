@@ -1,0 +1,11 @@
+incident_id,incident_type,severity,population,priority_score,cad_responder,cad_eta_min,cad_dist_km,trishul_responder,trishul_eta_min,trishul_dist_km,eta_delta_min,same_choice
+I01,fire,5,4200,8197.4,Engine-1,2.56,1.265,Engine-1,2.56,1.265,0.0,True
+I02,flood,3,800,256.9,Engine-2,2.25,1.111,Engine-2,2.25,1.111,0.0,True
+I03,earthquake,4,2100,1056.8,Engine-3,3.36,1.659,Engine-3,3.36,1.659,0.0,True
+I04,fire,2,300,48.8,Ambulance-2,4.76,2.352,Ambulance-2,4.76,2.352,0.0,True
+I05,flood,5,5600,11661.7,Engine-1,2.4,1.186,Engine-1,2.4,1.186,0.0,True
+I06,fire,1,100,8.7,Rescue-2,1.12,0.555,Rescue-2,1.12,0.555,0.0,True
+I07,earthquake,4,1800,869.4,Ambulance-2,1.12,0.555,Ambulance-2,1.12,0.555,0.0,True
+I08,flood,3,950,384.9,Rescue-1,1.68,0.83,Rescue-1,1.68,0.83,0.0,True
+I09,fire,5,3700,2741.7,Engine-2,2.52,1.245,Engine-2,2.52,1.245,0.0,True
+I10,earthquake,2,450,253.9,Rescue-1,3.48,1.717,Rescue-1,3.48,1.717,0.0,True

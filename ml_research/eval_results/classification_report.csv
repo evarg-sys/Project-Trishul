@@ -1,0 +1,61 @@
+text,true_label,cad_prediction,cad_correct,cad_time_ms,trishul_prediction,trishul_confidence,trishul_correct,trishul_time_ms,ensemble_prediction,ensemble_confidence,ensemble_correct,ensemble_time_ms
+"Building fire at 5th and Madison, flames visible from street",fire,fire,1,0.049,fire,60.0,1,0.025,N/A,0.0,N/A,0.0
+"Wildfire spreading rapidly through north suburb, evacuate no…",fire,fire,1,0.011,fire,90.0,1,0.016,N/A,0.0,N/A,0.0
+House fire with people trapped on second floor,fire,fire,1,0.007,fire,40.0,1,0.012,N/A,0.0,N/A,0.0
+"Small kitchen fire in apartment, occupants outside",fire,fire,1,0.006,fire,30.0,1,0.012,N/A,0.0,N/A,0.0
+"Large warehouse blaze, multiple units requested",fire,fire,1,0.006,fire,30.0,1,0.011,N/A,0.0,N/A,0.0
+"Car fire on highway, no injuries reported",fire,fire,1,0.005,fire,30.0,1,0.01,N/A,0.0,N/A,0.0
+Explosion followed by fire at chemical plant,fire,fire,1,0.005,fire,30.0,1,0.011,N/A,0.0,N/A,0.0
+"Burning smell in office building, possible electrical fire",fire,fire,1,0.006,fire,60.0,1,0.012,N/A,0.0,N/A,0.0
+"Fire out of control at strip mall, 3 businesses involved",fire,fire,1,0.005,fire,50.0,1,0.011,N/A,0.0,N/A,0.0
+"Dumpster fire behind restaurant, smoke near back entrance",fire,fire,1,0.005,fire,30.0,1,0.011,N/A,0.0,N/A,0.0
+"Flames seen coming from roof of school, students evacuating",fire,fire,1,0.005,fire,30.0,1,0.011,N/A,0.0,N/A,0.0
+"Fire in parking garage, multiple vehicles burning",fire,fire,1,0.005,fire,60.0,1,0.011,N/A,0.0,N/A,0.0
+Grass fire moving toward homes on the south side,fire,fire,1,0.005,fire,30.0,1,0.01,N/A,0.0,N/A,0.0
+"Major fire downtown, fire trucks already on scene",fire,fire,1,0.005,fire,50.0,1,0.011,N/A,0.0,N/A,0.0
+Stove fire with minor burns to resident,fire,fire,1,0.005,fire,30.0,1,0.01,N/A,0.0,N/A,0.0
+"Flash flood warning in effect, road under 2 feet of water",flood,flood,1,0.006,flood,60.0,1,0.012,N/A,0.0,N/A,0.0
+"River flooding downtown, water entering first floor of build…",flood,flood,1,0.006,flood,60.0,1,0.012,N/A,0.0,N/A,0.0
+"Storm drain overflow, street flooding near school",flood,flood,1,0.006,flood,60.0,1,0.011,N/A,0.0,N/A,0.0
+"Basement flooding after heavy rain, family needs help",flood,flood,1,0.005,flood,70.0,1,0.012,N/A,0.0,N/A,0.0
+"Major flood event, dam breach possible upstream",flood,flood,1,0.005,flood,70.0,1,0.011,N/A,0.0,N/A,0.0
+Water main break flooding intersection at Oak and Elm,flood,flood,1,0.005,flood,60.0,1,0.011,N/A,0.0,N/A,0.0
+"Flooding on I-90, multiple cars stranded in water",flood,flood,1,0.005,flood,70.0,1,0.011,N/A,0.0,N/A,0.0
+Inundation spreading through low-lying neighborhood,flood,flood,1,0.005,flood,30.0,1,0.011,N/A,0.0,N/A,0.0
+Flash flood causing mudslide blocking main road,flood,flood,1,0.005,flood,60.0,1,0.01,N/A,0.0,N/A,0.0
+Sewage backup flooding basement of apartment complex,flood,flood,1,0.005,flood,60.0,1,0.011,N/A,0.0,N/A,0.0
+"Flooded subway station, service suspended",flood,flood,1,0.005,flood,60.0,1,0.01,N/A,0.0,N/A,0.0
+"River overflowing banks, evacuate riverside homes",flood,negative,0,0.006,fire,10.0,0,0.011,N/A,0.0,N/A,0.0
+"Water rising fast in commercial district, businesses flooded",flood,flood,1,0.006,flood,60.0,1,0.012,N/A,0.0,N/A,0.0
+"Flooded road, driver stranded, needs rescue",flood,flood,1,0.005,flood,70.0,1,0.011,N/A,0.0,N/A,0.0
+"Heavy rain causing flooding in parking garage, 4 cars submer…",flood,flood,1,0.007,flood,60.0,1,0.011,N/A,0.0,N/A,0.0
+"Earthquake felt across the city, multiple buildings shaking",earthquake,earthquake,1,0.005,earthquake,60.0,1,0.011,N/A,0.0,N/A,0.0
+"Major earthquake, structural collapse reported downtown",earthquake,earthquake,1,0.005,earthquake,80.0,1,0.011,N/A,0.0,N/A,0.0
+"Tremor felt in north district, no visible damage yet",earthquake,earthquake,1,0.005,earthquake,30.0,1,0.011,N/A,0.0,N/A,0.0
+"Seismic activity detected, residents reporting shaking",earthquake,earthquake,1,0.005,earthquake,30.0,1,0.011,N/A,0.0,N/A,0.0
+"Earthquake with magnitude near 6, gas leaks suspected",earthquake,earthquake,1,0.005,earthquake,60.0,1,0.011,N/A,0.0,N/A,0.0
+"Building collapsed after quake, people trapped inside",earthquake,earthquake,1,0.005,earthquake,40.0,1,0.012,N/A,0.0,N/A,0.0
+"Small tremor, window cracked, no injuries",earthquake,earthquake,1,0.005,earthquake,30.0,1,0.01,N/A,0.0,N/A,0.0
+Earthquake aftershock causing wall collapses,earthquake,earthquake,1,0.005,earthquake,60.0,1,0.01,N/A,0.0,N/A,0.0
+"Seismic event damaged bridge, traffic stopped",earthquake,earthquake,1,0.005,earthquake,30.0,1,0.01,N/A,0.0,N/A,0.0
+"Earthquake struck during rush hour, power outages",earthquake,earthquake,1,0.005,earthquake,60.0,1,0.01,N/A,0.0,N/A,0.0
+"Ground shaking reported for 30 seconds, possible quake",earthquake,earthquake,1,0.005,earthquake,30.0,1,0.011,N/A,0.0,N/A,0.0
+"Earthquake damaged hospital, evacuating patients",earthquake,earthquake,1,0.005,earthquake,60.0,1,0.011,N/A,0.0,N/A,0.0
+"Tremors felt in multiple districts, emergency declared",earthquake,earthquake,1,0.005,earthquake,40.0,1,0.012,N/A,0.0,N/A,0.0
+Earthquake triggered landslide blocking highway,earthquake,earthquake,1,0.005,earthquake,60.0,1,0.01,N/A,0.0,N/A,0.0
+"Seismic tremor reported, no structural damage visible",earthquake,earthquake,1,0.005,earthquake,60.0,1,0.011,N/A,0.0,N/A,0.0
+Street lights are out on 5th avenue,negative,negative,1,0.005,negative,0.0,1,0.01,N/A,0.0,N/A,0.0
+Traffic jam near the convention center,negative,negative,1,0.005,negative,0.0,1,0.009,N/A,0.0,N/A,0.0
+Noise complaint from neighbors at 2am,negative,negative,1,0.005,negative,0.0,1,0.009,N/A,0.0,N/A,0.0
+Graffiti reported on city hall wall,negative,negative,1,0.005,negative,0.0,1,0.009,N/A,0.0,N/A,0.0
+Pothole reported on main street,negative,negative,1,0.005,negative,0.0,1,0.009,N/A,0.0,N/A,0.0
+Construction noise near hospital,negative,negative,1,0.005,negative,0.0,1,0.009,N/A,0.0,N/A,0.0
+Lost dog in Lincoln Park,negative,negative,1,0.005,negative,0.0,1,0.008,N/A,0.0,N/A,0.0
+"Minor fender bender, no injuries, vehicles driveable",negative,negative,1,0.005,negative,0.0,1,0.011,N/A,0.0,N/A,0.0
+"Fire station open house event this Saturday, public welcome",negative,fire,0,0.005,negative,0.0,1,0.003,N/A,0.0,N/A,0.0
+Everything is on fire this quarter – record sales numbers,negative,fire,0,0.011,negative,0.0,1,0.004,N/A,0.0,N/A,0.0
+Flooded with job applications after the new posting went liv…,negative,flood,0,0.005,negative,0.0,1,0.003,N/A,0.0,N/A,0.0
+The ground was shaking from the concert bass last night,negative,negative,1,0.005,negative,0.0,1,0.002,N/A,0.0,N/A,0.0
+Earthquake preparedness drill scheduled for next Tuesday at …,negative,earthquake,0,0.005,negative,0.0,1,0.002,N/A,0.0,N/A,0.0
+Blaze of glory performance by the band at Wrigley Field toni…,negative,fire,0,0.005,negative,0.0,1,0.002,N/A,0.0,N/A,0.0
+River cruise on the Chicago River – tickets still available,negative,negative,1,0.007,negative,0.0,1,0.005,N/A,0.0,N/A,0.0

@@ -1,0 +1,7 @@
+stage,mean_ms,median_ms,p95_ms,min_ms,max_ms
+cad_classification_ms,0.013,0.012,0.016,0.009,0.026
+trishul_classification_ms,0.015,0.015,0.018,0.014,0.02
+planning_ms,0.042,0.027,0.035,0.021,0.457
+routing_estimation_ms,0.867,0.856,0.933,0.839,1.153
+priority_scoring_ms,0.172,0.17,0.185,0.167,0.189
+trishul_full_pipeline_ms,1.096,1.068,1.16,1.046,1.816
